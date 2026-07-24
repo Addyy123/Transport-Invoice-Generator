@@ -49,60 +49,7 @@ export function Dashboard() {
   };
 
   useEffect(() => {
-    const seedDataIfNeeded = async () => {
-      try {
-        const invKeys = await db.invoices.keys();
-        if (invKeys.length === 0) {
-          setLoading(true);
-          // Create Customers
-          const c1Id = generateId();
-          const c2Id = generateId();
-          await db.customers.setItem(c1Id, {
-            id: c1Id, customerName: "Rajesh Sharma", companyName: "Sharma Enterprises",
-            gstNumber: "27AADCS1234A1Z5", city: "Mumbai", state: "Maharashtra", phone: "9876543210",
-            billingAddress: "123 MG Road", createdAt: Date.now(), updatedAt: Date.now()
-          } as any);
-          await db.customers.setItem(c2Id, {
-            id: c2Id, customerName: "Anita Desai", companyName: "Desai Traders",
-            gstNumber: "07BBDCD5678B1Z6", city: "Delhi", state: "Delhi", phone: "9988776655",
-            billingAddress: "45 Connaught Place", createdAt: Date.now(), updatedAt: Date.now()
-          } as any);
-
-          // Create 5 Invoices
-          const generateInv = async (idx: number, cId: string, amount: number, status: 'Draft' | 'Pending' | 'Paid') => {
-            const invId = generateId();
-            await db.invoices.setItem(invId, {
-              id: invId, customerId: cId, invoiceNumber: `INV-2026-00${idx}`,
-              invoiceDate: Date.now() - idx * 86400000,
-              dueDate: Date.now() + 15 * 86400000,
-              fromLocation: idx % 2 === 0 ? "Mumbai" : "Pune", toLocation: idx % 2 === 0 ? "Delhi" : "Bangalore",
-              distance: idx * 100 + 500, vehicleNumber: `MH 12 AB ${1000 + idx}`,
-              driverName: "Ram Singh",
-              subtotal: amount, cgstAmount: amount * 0.09, sgstAmount: amount * 0.09, igstAmount: 0,
-              grandTotal: amount * 1.18, advanceAmount: status === 'Paid' ? amount * 1.18 : 0,
-              paidAmount: status === 'Paid' ? amount * 1.18 : 0,
-              balanceAmount: status === 'Paid' ? 0 : amount * 1.18,
-              status: status, createdAt: Date.now(), updatedAt: Date.now(),
-              consignmentNumber: `CN-00${idx}`, goodsDescription: "Industrial Machinery",
-              weight: 1500, weightUnit: "kg", numberOfPackages: idx * 5 + 10,
-              freightCharge: amount, extraCharges: [], discount: 0, gstPercentage: 18, gstOption: 'CGST_SGST'
-            } as any);
-          };
-
-          await generateInv(1, c1Id, 25000, 'Draft');
-          await generateInv(2, c2Id, 45000, 'Pending');
-          await generateInv(3, c1Id, 12000, 'Paid');
-          await generateInv(4, c2Id, 75000, 'Pending');
-          await generateInv(5, c1Id, 32000, 'Paid');
-          localStorage.setItem('dummyDataSeeded', 'true');
-        }
-      } catch (e) {
-        console.error('Seeding failed', e);
-      }
-      await loadData();
-    };
-
-    seedDataIfNeeded();
+    loadData();
   }, []);
 
   const handleDelete = async (id: string) => {
