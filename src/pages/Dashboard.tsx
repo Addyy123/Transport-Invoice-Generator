@@ -3,7 +3,7 @@ import { FileText, IndianRupee, Clock, CheckCircle, Search, Trash2, Eye, Loader2
 import { Link, useNavigate } from 'react-router-dom';
 import { db } from '../lib/db';
 import type { Invoice, Customer, Settings } from '../lib/schema';
-import { generateId } from '../lib/utils';
+// generateId import removed
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
 
