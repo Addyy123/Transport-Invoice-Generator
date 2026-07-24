@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { Bell, Menu, UserCircle, Building2, Settings as SettingsIcon } from 'lucide-react';
+import { Bell, Menu, UserCircle, Building2, Settings as SettingsIcon, LogOut } from 'lucide-react';
+import { useAuth } from '../AuthProvider';
 
 interface TopBarProps {
   onMenuClick: () => void;
@@ -12,6 +13,7 @@ export function TopBar({ onMenuClick }: TopBarProps) {
   
   const [showNotifications, setShowNotifications] = useState(false);
   const [showProfile, setShowProfile] = useState(false);
+  const { user, signOut } = useAuth();
 
   const notifRef = useRef<HTMLDivElement>(null);
   const profileRef = useRef<HTMLDivElement>(null);
@@ -93,7 +95,7 @@ export function TopBar({ onMenuClick }: TopBarProps) {
             <div className="absolute right-0 mt-2 w-48 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 focus:outline-none z-50 py-1">
               <div className="px-4 py-2 border-b border-slate-100 mb-1">
                 <p className="text-sm font-medium text-slate-900">Administrator</p>
-                <p className="text-xs text-slate-500 truncate">admin@local</p>
+                <p className="text-xs text-slate-500 truncate">{user?.email || 'admin@local'}</p>
               </div>
               <button 
                 onClick={() => { setShowProfile(false); navigate('/profile'); }}
@@ -108,6 +110,18 @@ export function TopBar({ onMenuClick }: TopBarProps) {
               >
                 <SettingsIcon className="h-4 w-4" />
                 App Settings
+              </button>
+              <div className="border-t border-slate-100 my-1"></div>
+              <button 
+                onClick={async () => { 
+                  setShowProfile(false); 
+                  await signOut();
+                  navigate('/login');
+                }}
+                className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 flex items-center gap-2"
+              >
+                <LogOut className="h-4 w-4" />
+                Log Out
               </button>
             </div>
           )}
