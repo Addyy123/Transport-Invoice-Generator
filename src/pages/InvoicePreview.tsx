@@ -60,7 +60,7 @@ export function InvoicePreview() {
 
   const handleEmail = () => {
     const currency = settings?.currencySymbol || '₹';
-    const formatDate = (dateStr: string) => new Date(dateStr).toLocaleDateString();
+    const formatDate = (dateVal: string | number | Date) => new Date(dateVal).toLocaleDateString();
 
     let itemsText = `1. Freight Charge: ${currency}${invoice.freightCharge.toFixed(2)}`;
     if (invoice.goodsDescription) itemsText += `\n   (Goods: ${invoice.goodsDescription})`;
