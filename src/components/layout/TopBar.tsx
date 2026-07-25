@@ -13,7 +13,7 @@ export function TopBar({ onMenuClick }: TopBarProps) {
   
   const [showNotifications, setShowNotifications] = useState(false);
   const [showProfile, setShowProfile] = useState(false);
-  const { user, signOut, isGuest } = useAuth();
+  const { user, signOut } = useAuth();
 
   const notifRef = useRef<HTMLDivElement>(null);
   const profileRef = useRef<HTMLDivElement>(null);
@@ -88,16 +88,14 @@ export function TopBar({ onMenuClick }: TopBarProps) {
             className={`flex items-center gap-2 p-1.5 rounded-md transition-colors ${showProfile ? 'bg-slate-100' : 'hover:bg-slate-50'}`}
           >
             <UserCircle className="h-8 w-8 text-slate-400" />
-            <span className="hidden sm:block text-sm font-medium text-slate-700">
-              {isGuest ? 'Guest Tester' : 'Admin'}
-            </span>
+            <span className="hidden sm:block text-sm font-medium text-slate-700">Admin</span>
           </button>
 
           {showProfile && (
             <div className="absolute right-0 mt-2 w-48 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 focus:outline-none z-50 py-1">
               <div className="px-4 py-2 border-b border-slate-100 mb-1">
-                <p className="text-sm font-medium text-slate-900">{isGuest ? 'Local Test Mode' : 'Administrator'}</p>
-                <p className="text-xs text-slate-500 truncate">{isGuest ? 'guest@localhost' : (user?.email || 'admin@local')}</p>
+                <p className="text-sm font-medium text-slate-900">Administrator</p>
+                <p className="text-xs text-slate-500 truncate">{user?.email || 'admin@local'}</p>
               </div>
               <button 
                 onClick={() => { setShowProfile(false); navigate('/profile'); }}
