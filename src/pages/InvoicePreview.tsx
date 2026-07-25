@@ -59,17 +59,79 @@ export function InvoicePreview() {
   };
 
   const handleEmail = () => {
-    alert("Important: Web browsers do not allow automatic file attachments for security reasons.\n\nPlease save this invoice as a PDF first, then manually attach it to the Gmail window that opens.");
-    window.print();
+    const currency = settings?.currencySymbol || '₹';
+    const formatDate = (dateStr: string) => new Date(dateStr).toLocaleDateString();
+
+    let itemsText = `1. Freight Charge: ${currency}${invoice.freightCharge.toFixed(2)}`;
+    if (invoice.goodsDescription) itemsText += `\n   (Goods: ${invoice.goodsDescription})`;
+    if (invoice.weight) itemsText += ` | Weight: ${invoice.weight} ${invoice.weightUnit || ''}`;
+    if (invoice.numberOfPackages) itemsText += ` | Pkgs: ${invoice.numberOfPackages}`;
+
+    if (Array.isArray(invoice.extraCharges) && invoice.extraCharges.length > 0) {
+      invoice.extraCharges.forEach((charge, idx) => {
+        itemsText += `\n${idx + 2}. ${charge.name}: ${currency}${charge.amount.toFixed(2)}`;
+      });
+    }
+
+    let bankText = '';
+    if (company?.bankName) {
+      bankText = `\n----------------------------------------\nPAYMENT / BANK DETAILS\n----------------------------------------\nBank Name: ${company.bankName}\nA/C Name: ${company.accountHolder}\nA/C No: ${company.accountNumber}\nIFSC Code: ${company.ifscCode}` +
+      (company.upiId ? `\nUPI ID: ${company.upiId}` : '');
+    }
+
+    let taxText = '';
+    if (invoice.cgstAmount > 0) taxText += `\nCGST (${(invoice.gstPercentage/2).toFixed(1)}%): ${currency}${invoice.cgstAmount.toFixed(2)}`;
+    if (invoice.sgstAmount > 0) taxText += `\nSGST (${(invoice.gstPercentage/2).toFixed(1)}%): ${currency}${invoice.sgstAmount.toFixed(2)}`;
+    if (invoice.igstAmount > 0) taxText += `\nIGST (${invoice.gstPercentage}%): ${currency}${invoice.igstAmount.toFixed(2)}`;
+    if (invoice.discount > 0) taxText = `\nDiscount: -${currency}${invoice.discount.toFixed(2)}` + taxText;
+
+    const rawBody = `Dear ${customer?.companyName || customer?.customerName || 'Customer'},
+
+Please find the complete invoice details below:
+
+========================================
+INVOICE SUMMARY
+========================================
+Invoice No: ${invoice.invoiceNumber}
+Date: ${formatDate(invoice.invoiceDate)}
+Due Date: ${formatDate(invoice.dueDate)}
+Status: ${invoice.status.toUpperCase()}
+
+----------------------------------------
+BILLED TO
+----------------------------------------
+Name: ${customer?.companyName || customer?.customerName || 'N/A'}
+${customer?.billingAddress ? `Address: ${customer.billingAddress}\n` : ''}${customer?.phone ? `Phone: ${customer.phone}\n` : ''}${customer?.gstNumber ? `GSTIN: ${customer.gstNumber}\n` : ''}
+----------------------------------------
+TRANSPORT DETAILS
+----------------------------------------
+From: ${invoice.fromLocation}
+To: ${invoice.toLocation}
+${invoice.vehicleNumber ? `Vehicle No: ${invoice.vehicleNumber}\n` : ''}${invoice.lrNumber ? `LR No: ${invoice.lrNumber}\n` : ''}${invoice.distanceKm ? `Distance: ${invoice.distanceKm} km\n` : ''}
+----------------------------------------
+CHARGES BREAKDOWN
+----------------------------------------
+${itemsText}
+
+Subtotal: ${currency}${invoice.subtotal.toFixed(2)}${taxText}
+----------------------------------------
+GRAND TOTAL: ${currency}${invoice.grandTotal.toFixed(2)}
+----------------------------------------
+${invoice.paidAmount > 0 ? `Advance/Paid: -${currency}${invoice.paidAmount.toFixed(2)}\nBalance Due: ${currency}${invoice.balanceAmount.toFixed(2)}\n` : ''}${bankText}
+
+${invoice.remarks ? `\nRemarks:\n${invoice.remarks}\n` : ''}
+Thank you for your business!
+
+Regards,
+${company?.companyName || 'Transport Company'}
+${company?.phone ? `Phone: ${company.phone}` : ''}
+${company?.email ? `Email: ${company.email}` : ''}`;
 
     const subject = encodeURIComponent(`Transport Invoice - ${invoice.invoiceNumber}`);
-    const rawBody = `Dear ${customer?.customerName || 'Customer'},\n\nPlease find the transport invoice details below.\n\nInvoice Number: ${invoice.invoiceNumber}\nRoute: ${invoice.fromLocation} to ${invoice.toLocation}\nTotal Amount: ${settings?.currencySymbol || '₹'}${invoice.grandTotal.toFixed(2)}\n\nPlease find the attached PDF invoice.\n\nThank you for choosing ${company?.companyName || 'our services'}.\n\nRegards,\n${company?.companyName || 'Transport Company'}`;
     const body = encodeURIComponent(rawBody);
     
-    setTimeout(() => {
-      const toEmail = customer?.email || '';
-      window.open(`https://mail.google.com/mail/?view=cm&fs=1&to=${toEmail}&su=${subject}&body=${body}`, '_blank');
-    }, 500);
+    const toEmail = customer?.email || '';
+    window.open(`https://mail.google.com/mail/?view=cm&fs=1&to=${toEmail}&su=${subject}&body=${body}`, '_blank');
   };
 
   return (
