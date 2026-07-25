@@ -1,9 +1,11 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
 import { Building2, Loader2, LogIn } from 'lucide-react';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
 import { Label } from '../components/ui/label';
+import { useAuth } from '../components/AuthProvider';
 
 export function Login() {
   const [email, setEmail] = useState('');
@@ -11,6 +13,15 @@ export function Login() {
   const [loading, setLoading] = useState(false);
   const [isSignUp, setIsSignUp] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  const { session, loginAsGuest } = useAuth();
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    if (session) {
+      navigate('/', { replace: true });
+    }
+  }, [session, navigate]);
 
   const handleGoogleLogin = async () => {
     try {
@@ -151,8 +162,29 @@ export function Login() {
             </svg>
             Google
           </Button>
+
+          {(import.meta.env.DEV || window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') && (
+            <div className="mt-4 pt-4 border-t border-slate-100">
+              <Button 
+                type="button" 
+                variant="secondary" 
+                className="w-full flex justify-center items-center py-2.5 bg-amber-50 text-amber-900 border border-amber-300 hover:bg-amber-100 font-semibold shadow-sm transition-all"
+                onClick={() => {
+                  loginAsGuest();
+                  navigate('/', { replace: true });
+                }}
+              >
+                <span className="mr-2 text-lg">🧪</span>
+                Continue as Guest (Local Test Mode)
+              </Button>
+              <p className="text-center text-xs text-amber-700 mt-1.5 font-medium">
+                Bypasses Google OAuth & Vercel redirect for local testing
+              </p>
+            </div>
+          )}
         </form>
       </div>
     </div>
   );
 }
+

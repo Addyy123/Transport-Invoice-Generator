@@ -135,82 +135,83 @@ ${company?.email ? `Email: ${company.email}` : ''}`;
   };
 
   return (
-    <div className="max-w-4xl mx-auto py-6 print:py-0 print:max-w-none">
-      <div className="flex justify-between items-center mb-6 print:hidden">
-        <Button variant="ghost" onClick={() => navigate(-1)}>
+    <div className="max-w-4xl mx-auto py-4 sm:py-6 print:py-0 print:max-w-none px-2 sm:px-0 print:px-0">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6 print:hidden">
+        <Button variant="ghost" onClick={() => navigate(-1)} className="self-start -ml-2 sm:ml-0">
           <ArrowLeft className="h-4 w-4 mr-2" /> Back
         </Button>
-        <div className="space-x-2">
-          <Button onClick={() => navigate(`/edit-invoice/${invoice.id}`)} variant="outline">
-            <Edit className="h-4 w-4 mr-2" /> Edit
+        <div className="flex flex-wrap gap-2 w-full sm:w-auto justify-end">
+          <Button onClick={() => navigate(`/edit-invoice/${invoice.id}`)} variant="outline" size="sm" className="flex-1 sm:flex-initial">
+            <Edit className="h-4 w-4 mr-1.5 sm:mr-2" /> Edit
           </Button>
-          <Button onClick={handlePrint} variant="outline">
-            <Printer className="h-4 w-4 mr-2" /> Print / PDF
+          <Button onClick={handlePrint} variant="outline" size="sm" className="flex-1 sm:flex-initial">
+            <Printer className="h-4 w-4 mr-1.5 sm:mr-2" /> Print / PDF
           </Button>
-          <Button onClick={handleEmail}>
-            <Mail className="h-4 w-4 mr-2" /> Share via Gmail
+          <Button onClick={handleEmail} size="sm" className="w-full sm:w-auto sm:flex-initial mt-1 sm:mt-0">
+            <Mail className="h-4 w-4 mr-1.5 sm:mr-2" /> Share via Gmail
           </Button>
         </div>
       </div>
 
-      <div className="bg-white border sm:rounded-lg print:border-none print:shadow-none p-8 md:p-10 print:p-0">
+      <div className="bg-white border sm:rounded-lg print:border-none print:shadow-none p-4 sm:p-8 md:p-10 print:p-0 overflow-hidden print:overflow-visible">
         
         {/* Header */}
-        <div className="flex justify-between items-start border-b-2 border-slate-200 pb-6 mb-6 print:pb-4 print:mb-4">
-          <div className="flex-1">
-            {company?.logo && <img src={company.logo} alt="Company Logo" className="h-16 mb-4 object-contain" />}
-            <h1 className="text-2xl font-bold text-slate-900">{company?.companyName || 'Transport Company'}</h1>
-            {company?.address && <p className="text-sm text-slate-600 mt-1">{company.address}</p>}
-            {(company?.city || company?.state) && <p className="text-sm text-slate-600">{company.city}, {company.state} {company.pinCode}</p>}
-            {company?.phone && <p className="text-sm text-slate-600 mt-1">Phone: {company.phone}</p>}
-            {company?.email && <p className="text-sm text-slate-600">Email: {company.email}</p>}
-            {company?.gstNumber && <p className="text-sm font-semibold text-slate-800 mt-1">GSTIN: {company.gstNumber}</p>}
+        <div className="flex flex-col sm:flex-row justify-between items-start gap-6 sm:gap-4 border-b-2 border-slate-200 pb-6 mb-6 print:flex-row print:gap-0 print:pb-4 print:mb-4">
+          <div className="flex-1 w-full sm:w-auto break-words pr-0 sm:pr-4 print:pr-4">
+            {company?.logo && <img src={company.logo} alt="Company Logo" className="h-14 sm:h-16 mb-4 object-contain max-w-full" />}
+            <h1 className="text-xl sm:text-2xl print:text-2xl font-bold text-slate-900 break-words">{company?.companyName || 'Transport Company'}</h1>
+            {company?.address && <p className="text-sm text-slate-600 mt-1 break-words">{company.address}</p>}
+            {(company?.city || company?.state) && <p className="text-sm text-slate-600 break-words">{company.city}, {company.state} {company.pinCode}</p>}
+            {company?.phone && <p className="text-sm text-slate-600 mt-1 break-words">Phone: {company.phone}</p>}
+            {company?.email && <p className="text-sm text-slate-600 break-all">Email: {company.email}</p>}
+            {company?.gstNumber && <p className="text-sm font-semibold text-slate-800 mt-1 break-all">GSTIN: {company.gstNumber}</p>}
+            {company?.panNumber && <p className="text-sm font-semibold text-slate-800 mt-1 break-all">PAN: {company.panNumber}</p>}
           </div>
           
-          <div className="text-right">
-            <h2 className="text-4xl font-bold text-slate-900 uppercase tracking-wider">INVOICE</h2>
-            <div className="mt-4 text-sm space-y-1">
-              <p><span className="text-slate-500 font-medium mr-2">Invoice No:</span> <span className="font-bold text-slate-900">{invoice.invoiceNumber}</span></p>
-              <p><span className="text-slate-500 font-medium mr-2">Date:</span> <span className="font-semibold text-slate-900">{new Date(invoice.invoiceDate).toLocaleDateString()}</span></p>
-              <p><span className="text-slate-500 font-medium mr-2">Due Date:</span> <span className="font-semibold text-slate-900">{new Date(invoice.dueDate).toLocaleDateString()}</span></p>
-              <p><span className="text-slate-500 font-medium mr-2">Status:</span> <span className="font-bold uppercase">{invoice.status}</span></p>
+          <div className="w-full sm:w-auto text-left sm:text-right print:w-auto print:text-right border-t sm:border-t-0 print:border-t-0 pt-4 sm:pt-0 print:pt-0 border-slate-100">
+            <h2 className="text-3xl sm:text-4xl print:text-4xl font-bold text-slate-900 uppercase tracking-wider">INVOICE</h2>
+            <div className="mt-3 sm:mt-4 text-sm space-y-1">
+              <p className="flex justify-between sm:justify-end print:justify-end gap-4"><span className="text-slate-500 font-medium">Invoice No:</span> <span className="font-bold text-slate-900 break-all">{invoice.invoiceNumber}</span></p>
+              <p className="flex justify-between sm:justify-end print:justify-end gap-4"><span className="text-slate-500 font-medium">Date:</span> <span className="font-semibold text-slate-900">{new Date(invoice.invoiceDate).toLocaleDateString()}</span></p>
+              <p className="flex justify-between sm:justify-end print:justify-end gap-4"><span className="text-slate-500 font-medium">Due Date:</span> <span className="font-semibold text-slate-900">{new Date(invoice.dueDate).toLocaleDateString()}</span></p>
+              <p className="flex justify-between sm:justify-end print:justify-end gap-4"><span className="text-slate-500 font-medium">Status:</span> <span className="font-bold uppercase">{invoice.status}</span></p>
             </div>
           </div>
         </div>
 
         {/* Info Grid */}
-        <div className="grid grid-cols-2 gap-8 mb-6 print:mb-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 sm:gap-8 mb-6 print:grid-cols-2 print:gap-8 print:mb-4">
           {/* Billed To */}
-          <div>
+          <div className="break-words">
             <h3 className="text-sm font-bold text-slate-800 uppercase border-b border-slate-200 pb-1 mb-2">Billed To</h3>
-            <p className="font-bold text-base text-slate-900">{customer?.companyName || customer?.customerName}</p>
-            {customer?.companyName && <p className="text-sm text-slate-700">{customer?.customerName}</p>}
-            {customer?.billingAddress && <p className="text-sm text-slate-600 mt-1">{customer.billingAddress}</p>}
-            {(customer?.city || customer?.state) && <p className="text-sm text-slate-600">{customer.city}, {customer.state} {customer.pinCode}</p>}
-            {customer?.phone && <p className="text-sm text-slate-600 mt-1">Phone: {customer.phone}</p>}
-            {customer?.gstNumber && <p className="text-sm font-semibold text-slate-800 mt-1">GSTIN: {customer.gstNumber}</p>}
+            <p className="font-bold text-base text-slate-900 break-words">{customer?.companyName || customer?.customerName}</p>
+            {customer?.companyName && <p className="text-sm text-slate-700 break-words">{customer?.customerName}</p>}
+            {customer?.billingAddress && <p className="text-sm text-slate-600 mt-1 break-words">{customer.billingAddress}</p>}
+            {(customer?.city || customer?.state) && <p className="text-sm text-slate-600 break-words">{customer.city}, {customer.state} {customer.pinCode}</p>}
+            {customer?.phone && <p className="text-sm text-slate-600 mt-1 break-words">Phone: {customer.phone}</p>}
+            {customer?.gstNumber && <p className="text-sm font-semibold text-slate-800 mt-1 break-all">GSTIN: {customer.gstNumber}</p>}
           </div>
 
           {/* Transport Details */}
-          <div>
+          <div className="break-words">
             <h3 className="text-sm font-bold text-slate-800 uppercase border-b border-slate-200 pb-1 mb-2">Transport Details</h3>
-            <div className="text-sm grid grid-cols-[100px_1fr] gap-y-1">
+            <div className="text-sm grid grid-cols-[90px_1fr] sm:grid-cols-[100px_1fr] print:grid-cols-[100px_1fr] gap-x-2 gap-y-1.5">
               <span className="text-slate-600 font-medium">From:</span>
-              <span className="font-bold text-slate-900">{invoice.fromLocation}</span>
+              <span className="font-bold text-slate-900 break-words">{invoice.fromLocation}</span>
               
               <span className="text-slate-600 font-medium">To:</span>
-              <span className="font-bold text-slate-900">{invoice.toLocation}</span>
+              <span className="font-bold text-slate-900 break-words">{invoice.toLocation}</span>
               
               {invoice.vehicleNumber && (
                 <>
                   <span className="text-slate-600 font-medium">Vehicle No:</span>
-                  <span className="text-slate-900">{invoice.vehicleNumber}</span>
+                  <span className="text-slate-900 font-medium break-all">{invoice.vehicleNumber}</span>
                 </>
               )}
               {invoice.lrNumber && (
                 <>
                   <span className="text-slate-600 font-medium">LR No:</span>
-                  <span className="text-slate-900">{invoice.lrNumber}</span>
+                  <span className="text-slate-900 font-medium break-all">{invoice.lrNumber}</span>
                 </>
               )}
               {invoice.distanceKm && (
@@ -224,28 +225,28 @@ ${company?.email ? `Email: ${company.email}` : ''}`;
         </div>
 
         {/* Table */}
-        <div className="mb-6 print:mb-4">
-          <table className="w-full text-sm text-left border border-slate-200">
+        <div className="mb-6 print:mb-4 overflow-x-auto print:overflow-visible -mx-4 sm:mx-0 px-4 sm:px-0 print:mx-0 print:px-0">
+          <table className="w-full text-sm text-left border border-slate-200 min-w-[280px]">
             <thead className="bg-slate-100 border-b border-slate-200">
               <tr>
-                <th className="px-4 py-3 font-bold text-slate-800">Description</th>
-                <th className="px-4 py-3 font-bold text-slate-800 text-right w-32">Amount</th>
+                <th className="px-3 sm:px-4 py-3 font-bold text-slate-800">Description</th>
+                <th className="px-3 sm:px-4 py-3 font-bold text-slate-800 text-right w-28 sm:w-32 print:w-32">Amount</th>
               </tr>
             </thead>
             <tbody>
               <tr className="border-b border-slate-200">
-                <td className="px-4 py-3">
+                <td className="px-3 sm:px-4 py-3 break-words">
                   <p className="font-bold text-slate-900">Freight Charge</p>
-                  {invoice.goodsDescription && <p className="text-slate-600 mt-1">Goods: {invoice.goodsDescription}</p>}
+                  {invoice.goodsDescription && <p className="text-slate-600 mt-1 break-words">Goods: {invoice.goodsDescription}</p>}
                   {invoice.weight ? <p className="text-slate-600">Weight: {invoice.weight} {invoice.weightUnit}</p> : null}
                   {invoice.numberOfPackages ? <p className="text-slate-600">Packages: {invoice.numberOfPackages}</p> : null}
                 </td>
-                <td className="px-4 py-3 text-right font-bold text-slate-900 align-top">{settings?.currencySymbol}{invoice.freightCharge.toFixed(2)}</td>
+                <td className="px-3 sm:px-4 py-3 text-right font-bold text-slate-900 align-top whitespace-nowrap">{settings?.currencySymbol}{invoice.freightCharge.toFixed(2)}</td>
               </tr>
               {Array.isArray(invoice.extraCharges) && invoice.extraCharges.map((charge, idx) => (
                 <tr key={idx} className="border-b border-slate-200">
-                  <td className="px-4 py-3 text-slate-700">{charge.name}</td>
-                  <td className="px-4 py-3 text-right text-slate-900">{settings?.currencySymbol}{charge.amount.toFixed(2)}</td>
+                  <td className="px-3 sm:px-4 py-3 text-slate-700 break-words">{charge.name}</td>
+                  <td className="px-3 sm:px-4 py-3 text-right text-slate-900 whitespace-nowrap">{settings?.currencySymbol}{charge.amount.toFixed(2)}</td>
                 </tr>
               ))}
             </tbody>
@@ -253,17 +254,30 @@ ${company?.email ? `Email: ${company.email}` : ''}`;
         </div>
 
         {/* Totals & Bank details */}
-        <div className="grid grid-cols-2 gap-8 mb-6 print:mb-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 sm:gap-8 mb-6 print:grid-cols-2 print:gap-8 print:mb-4">
           {/* Bank Details */}
-          <div>
+          <div className="break-words">
             <h3 className="text-sm font-bold text-slate-800 uppercase border-b border-slate-200 pb-1 mb-2">Payment / Bank Details</h3>
             {company?.bankName ? (
-              <div className="text-sm space-y-1">
-                <p><span className="text-slate-600 font-medium inline-block w-24">Bank:</span> <span className="font-bold text-slate-900">{company.bankName}</span></p>
-                <p><span className="text-slate-600 font-medium inline-block w-24">A/C Name:</span> <span className="font-bold text-slate-900">{company.accountHolder}</span></p>
-                <p><span className="text-slate-600 font-medium inline-block w-24">A/C No:</span> <span className="font-bold text-slate-900">{company.accountNumber}</span></p>
-                <p><span className="text-slate-600 font-medium inline-block w-24">IFSC Code:</span> <span className="font-bold text-slate-900">{company.ifscCode}</span></p>
-                {company.upiId && <p className="mt-2"><span className="text-slate-600 font-medium inline-block w-24">UPI ID:</span> <span className="font-bold text-slate-900">{company.upiId}</span></p>}
+              <div className="text-sm grid grid-cols-[90px_1fr] sm:grid-cols-[100px_1fr] print:grid-cols-[100px_1fr] gap-x-2 gap-y-1.5">
+                <span className="text-slate-600 font-medium">Bank:</span> 
+                <span className="font-bold text-slate-900 break-words">{company.bankName}</span>
+                
+                <span className="text-slate-600 font-medium">A/C Name:</span> 
+                <span className="font-bold text-slate-900 break-words">{company.accountHolder}</span>
+                
+                <span className="text-slate-600 font-medium">A/C No:</span> 
+                <span className="font-bold text-slate-900 break-all">{company.accountNumber}</span>
+                
+                <span className="text-slate-600 font-medium">IFSC Code:</span> 
+                <span className="font-bold text-slate-900 break-all">{company.ifscCode}</span>
+                
+                {company.upiId && (
+                  <>
+                    <span className="text-slate-600 font-medium">UPI ID:</span> 
+                    <span className="font-bold text-slate-900 break-all">{company.upiId}</span>
+                  </>
+                )}
               </div>
             ) : (
               <p className="text-sm text-slate-500 italic">No bank details provided.</p>
@@ -271,7 +285,7 @@ ${company?.email ? `Email: ${company.email}` : ''}`;
           </div>
 
           {/* Totals Calculation */}
-          <div className="text-sm">
+          <div className="text-sm mt-2 sm:mt-0 print:mt-0">
             <div className="flex justify-between py-1">
               <span className="text-slate-600 font-medium">Subtotal:</span>
               <span className="font-semibold text-slate-900">{settings?.currencySymbol}{invoice.subtotal.toFixed(2)}</span>
@@ -323,7 +337,7 @@ ${company?.email ? `Email: ${company.email}` : ''}`;
         </div>
 
         {/* Amount in Words & Remarks */}
-        <div className="mb-6 print:mb-4 space-y-4">
+        <div className="mb-6 print:mb-4 space-y-4 break-words">
           <div className="text-sm">
             <span className="font-bold text-slate-800">Amount in Words: </span>
             <span className="italic text-slate-700">{settings?.currencySymbol === '₹' ? 'Rupees ' : ''}{amountToWords(invoice.grandTotal)}</span>
@@ -332,29 +346,29 @@ ${company?.email ? `Email: ${company.email}` : ''}`;
           {invoice.remarks && (
             <div className="text-sm">
               <span className="font-bold text-slate-800 block mb-1">Remarks: </span>
-              <span className="text-slate-700 whitespace-pre-wrap">{invoice.remarks}</span>
+              <span className="text-slate-700 whitespace-pre-wrap break-words">{invoice.remarks}</span>
             </div>
           )}
 
           {company?.termsAndConditions && (
             <div className="text-sm">
               <span className="font-bold text-slate-800 block mb-1">Terms & Conditions: </span>
-              <span className="text-slate-700 whitespace-pre-wrap">{company.termsAndConditions}</span>
+              <span className="text-slate-700 whitespace-pre-wrap break-words">{company.termsAndConditions}</span>
             </div>
           )}
         </div>
 
         {/* Signatures */}
-        <div className="grid grid-cols-2 gap-8 mt-12 pt-4 print:mt-8">
+        <div className="grid grid-cols-2 gap-4 sm:gap-8 mt-12 pt-4 print:mt-8 print:gap-8">
           <div className="text-center">
-            <div className="border-t border-slate-400 w-48 mx-auto pt-2">
-              <p className="text-sm font-bold text-slate-800">Receiver's Signature</p>
+            <div className="border-t border-slate-400 w-full max-w-[12rem] mx-auto pt-2">
+              <p className="text-xs sm:text-sm print:text-sm font-bold text-slate-800">Receiver's Signature</p>
             </div>
           </div>
           <div className="text-center">
-            <div className="border-t border-slate-400 w-48 mx-auto pt-2">
-              <p className="text-sm font-bold text-slate-800">For {company?.companyName || 'Company'}</p>
-              <p className="text-xs text-slate-600 mt-1">Authorized Signatory</p>
+            <div className="border-t border-slate-400 w-full max-w-[12rem] mx-auto pt-2 break-words">
+              <p className="text-xs sm:text-sm print:text-sm font-bold text-slate-800">For {company?.companyName || 'Company'}</p>
+              <p className="text-[10px] sm:text-xs print:text-xs text-slate-600 mt-1">Authorized Signatory</p>
             </div>
           </div>
         </div>

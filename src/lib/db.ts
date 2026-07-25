@@ -1,6 +1,9 @@
 import { supabase } from './supabase';
 
 async function getCurrentUserId() {
+  if (localStorage.getItem('alex_logistics_guest_mode') === 'true') {
+    return 'guest-local-test-user';
+  }
   const { data: { session } } = await supabase.auth.getSession();
   return session?.user?.id;
 }
@@ -8,6 +11,11 @@ async function getCurrentUserId() {
 const createSupabaseStore = (tableName: string) => {
   return {
     async getItem<T>(key: string): Promise<T | null> {
+      if (localStorage.getItem('alex_logistics_guest_mode') === 'true') {
+        const store = JSON.parse(localStorage.getItem(`guest_store_${tableName}`) || '{}');
+        return (store[key] as T) || null;
+      }
+
       const uid = await getCurrentUserId();
       if (!uid) return null;
       
@@ -28,6 +36,13 @@ const createSupabaseStore = (tableName: string) => {
     },
     
     async setItem<T>(key: string, value: T): Promise<T> {
+      if (localStorage.getItem('alex_logistics_guest_mode') === 'true') {
+        const store = JSON.parse(localStorage.getItem(`guest_store_${tableName}`) || '{}');
+        store[key] = value;
+        localStorage.setItem(`guest_store_${tableName}`, JSON.stringify(store));
+        return value;
+      }
+
       const uid = await getCurrentUserId();
       if (!uid) throw new Error('You must be logged in to save data.');
       
@@ -43,6 +58,13 @@ const createSupabaseStore = (tableName: string) => {
     },
     
     async removeItem(key: string): Promise<void> {
+      if (localStorage.getItem('alex_logistics_guest_mode') === 'true') {
+        const store = JSON.parse(localStorage.getItem(`guest_store_${tableName}`) || '{}');
+        delete store[key];
+        localStorage.setItem(`guest_store_${tableName}`, JSON.stringify(store));
+        return;
+      }
+
       const uid = await getCurrentUserId();
       if (!uid) return;
       
@@ -58,6 +80,11 @@ const createSupabaseStore = (tableName: string) => {
     },
     
     async keys(): Promise<string[]> {
+      if (localStorage.getItem('alex_logistics_guest_mode') === 'true') {
+        const store = JSON.parse(localStorage.getItem(`guest_store_${tableName}`) || '{}');
+        return Object.keys(store);
+      }
+
       const uid = await getCurrentUserId();
       if (!uid) return [];
       
@@ -75,6 +102,11 @@ const createSupabaseStore = (tableName: string) => {
     },
     
     async clear(): Promise<void> {
+      if (localStorage.getItem('alex_logistics_guest_mode') === 'true') {
+        localStorage.removeItem(`guest_store_${tableName}`);
+        return;
+      }
+
       const uid = await getCurrentUserId();
       if (!uid) return;
       
@@ -96,3 +128,4 @@ export const db = {
   invoices: createSupabaseStore('invoices'),
   settings: createSupabaseStore('settings'),
 };
+
