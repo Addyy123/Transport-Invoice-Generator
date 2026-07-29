@@ -109,8 +109,8 @@ export function Dashboard() {
   const filteredInvoices = invoices.filter(inv => {
     const matchesSearch = inv.invoiceNumber.toLowerCase().includes(searchTerm.toLowerCase()) ||
       inv.customerName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      inv.fromLocation.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      inv.toLocation.toLowerCase().includes(searchTerm.toLowerCase());
+      (inv.fromLocation || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (inv.toLocation || '').toLowerCase().includes(searchTerm.toLowerCase());
       
     if (!matchesSearch) return false;
     
@@ -241,10 +241,10 @@ export function Dashboard() {
                 filteredInvoices.map((inv) => (
                   <tr key={inv.id} className="hover:bg-slate-50/50">
                     <td className="px-6 py-4 font-medium whitespace-nowrap">{inv.invoiceNumber}</td>
-                    <td className="px-6 py-4 whitespace-nowrap">{new Date(inv.invoiceDate).toLocaleDateString()}</td>
+                    <td className="px-6 py-4 whitespace-nowrap">{new Date(inv.invoiceDate || Date.now()).toLocaleDateString()}</td>
                     <td className="px-6 py-4 max-w-[150px] truncate" title={inv.customerName}>{inv.customerName}</td>
-                    <td className="px-6 py-4 max-w-[150px] truncate text-slate-500" title={`${inv.fromLocation} → ${inv.toLocation}`}>
-                      {inv.fromLocation} → {inv.toLocation}
+                    <td className="px-6 py-4 max-w-[150px] truncate text-slate-500" title={`${inv.fromLocation || ''} → ${inv.toLocation || ''}`}>
+                      {inv.fromLocation || ''} → {inv.toLocation || ''}
                     </td>
                     <td className="px-6 py-4 text-right font-medium whitespace-nowrap">{currency}{inv.grandTotal.toFixed(2)}</td>
                     <td className="px-6 py-4 text-right text-amber-600 font-medium whitespace-nowrap">{currency}{inv.balanceAmount.toFixed(2)}</td>
@@ -260,7 +260,7 @@ export function Dashboard() {
                         )}
                         <Button variant="ghost" size="icon" title="Share via Email" onClick={() => {
                           const subject = encodeURIComponent(`Transport Invoice - ${inv.invoiceNumber}`);
-                          const formatDate = (dateVal: string | number | Date) => new Date(dateVal).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
+                          const formatDate = (dateVal: string | number | Date | undefined) => new Date(dateVal || Date.now()).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
                           const rawBody = `Dear ${inv.customerName || 'Valued Customer'},
 
 We hope this email finds you well.

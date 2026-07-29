@@ -36,7 +36,7 @@ export function CreateInvoice() {
     resolver: zodResolver(invoiceSchema),
     defaultValues: {
       id: generateId(),
-      invoeiceNumber: '',
+      invoiceNumber: '',
       invoiceDate: Date.now(),
       dueDate: Date.now() + 15 * 24 * 60 * 60 * 1000,
       status: 'Draft',
@@ -925,7 +925,7 @@ export function CreateInvoice() {
                 
                 <div className="flex justify-between text-sm">
                   <span className="text-slate-500">Subtotal</span>
-                  <span className="font-medium">{appSettings?.currencySymbol}{dSubtotal?.toFixed(2)}</span>
+                  <span className="font-medium">{appSettings?.currencySymbol}{(Number(dSubtotal) || 0).toFixed(2)}</span>
                 </div>
                 
                 {Number(discount) > 0 && (
@@ -939,26 +939,26 @@ export function CreateInvoice() {
                   <>
                     <div className="flex justify-between text-sm text-slate-500">
                       <span>CGST ({(Number(gstPercentage)/2).toFixed(1)}%)</span>
-                      <span>{appSettings?.currencySymbol}{dCgst?.toFixed(2)}</span>
+                      <span>{appSettings?.currencySymbol}{(Number(dCgst) || 0).toFixed(2)}</span>
                     </div>
                     <div className="flex justify-between text-sm text-slate-500">
                       <span>SGST ({(Number(gstPercentage)/2).toFixed(1)}%)</span>
-                      <span>{appSettings?.currencySymbol}{dSgst?.toFixed(2)}</span>
+                      <span>{appSettings?.currencySymbol}{(Number(dSgst) || 0).toFixed(2)}</span>
                     </div>
                   </>
                 )}
                 
                 {gstOption === 'IGST' && (
                   <div className="flex justify-between text-sm text-slate-500">
-                    <span>IGST ({gstPercentage}%)</span>
-                    <span>{appSettings?.currencySymbol}{dIgst?.toFixed(2)}</span>
+                    <span>IGST ({Number(gstPercentage)}%)</span>
+                    <span>{appSettings?.currencySymbol}{(Number(dIgst) || 0).toFixed(2)}</span>
                   </div>
                 )}
 
                 <div className="border-t pt-4 mt-4">
                   <div className="flex justify-between items-center mb-2">
                     <span className="font-semibold text-lg">Grand Total</span>
-                    <span className="font-bold text-2xl text-primary">{appSettings?.currencySymbol}{dGrandTotal?.toFixed(2)}</span>
+                    <span className="font-bold text-2xl text-primary">{appSettings?.currencySymbol}{(Number(dGrandTotal) || 0).toFixed(2)}</span>
                   </div>
                   
                   {Number(paidAmount) > 0 && (
@@ -970,7 +970,7 @@ export function CreateInvoice() {
                   
                   <div className="flex justify-between items-center mt-4 pt-4 border-t border-dashed">
                     <span className="font-medium text-slate-700">Balance Due</span>
-                    <span className="font-bold text-xl text-amber-600">{appSettings?.currencySymbol}{dBalance?.toFixed(2)}</span>
+                    <span className="font-bold text-xl text-amber-600">{appSettings?.currencySymbol}{(Number(dBalance) || 0).toFixed(2)}</span>
                   </div>
                 </div>
               </div>

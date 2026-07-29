@@ -5,8 +5,6 @@ import { db } from '../lib/db';
 import type { Invoice, CompanyProfile, Customer, Settings } from '../lib/schema';
 import { Button } from '../components/ui/button';
 import { amountToWords } from '../lib/numberToWords';
-import HeaderVSImage from '../../HeaderVS.png';
-import HeaderSNImage from '../../HeaderSN.png';
 
 export function InvoicePreview() {
   const { id } = useParams<{ id: string }>();
@@ -63,7 +61,7 @@ export function InvoicePreview() {
 
   const handleEmail = () => {
     const currency = settings?.currencySymbol || '₹';
-    const formatDate = (dateVal: string | number | Date) => new Date(dateVal).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
+    const formatDate = (dateVal: string | number | Date | undefined) => new Date(dateVal || Date.now()).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
 
     let itemsText = `• Freight Charge: ${currency}${invoice.freightCharge.toFixed(2)}`;
     if (invoice.goodsDescription) itemsText += `\n  (Description: ${invoice.goodsDescription})`;

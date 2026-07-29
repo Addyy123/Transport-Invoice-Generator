@@ -16,6 +16,7 @@ const numOpt = z.preprocess(processNumber, z.number().optional());
 const numZero = z.preprocess(processZero, z.number().default(0));
 
 export const companySchema = z.object({
+  id: z.string().optional(),
   companyName: z.string().min(1, 'Company Name is required'),
   logo: z.string().optional(),
   gstNumber: z.string().optional(),
