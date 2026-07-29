@@ -1,12 +1,14 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Settings as SettingsIcon, Save, Loader2, CheckCircle2, Download, Upload } from 'lucide-react';
+import { toast } from 'sonner';
 import { db } from '../lib/db';
 import { settingsSchema, type Settings as SettingsType } from '../lib/schema';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
 import { Label } from '../components/ui/label';
+import { ConfirmModal } from '../components/ui/confirm-modal';
 
 export function Settings() {
   const [isSaving, setIsSaving] = useState(false);
@@ -14,6 +16,8 @@ export function Settings() {
   const [saveSuccess, setSaveSuccess] = useState(false);
   const [isExporting, setIsExporting] = useState(false);
   const [isImporting, setIsImporting] = useState(false);
+  const [pendingImportFile, setPendingImportFile] = useState<File | null>(null);
+  const [isConfirmOpen, setIsConfirmOpen] = useState(false);
 
   const { register, handleSubmit, reset, formState: { errors, isDirty } } = useForm<any>({
     resolver: zodResolver(settingsSchema),
@@ -41,6 +45,20 @@ export function Settings() {
     loadSettings();
   }, [reset]);
 
+  // Bug #2: Use a ref so the event listener always calls the latest onSubmit
+  const onSubmitRef = useRef<typeof onSubmit | null>(null);
+  useEffect(() => { onSubmitRef.current = onSubmit; });
+
+  useEffect(() => {
+    const handleSave = () => {
+      if (isDirty && !isSaving) {
+        handleSubmit((data) => onSubmitRef.current?.(data))();
+      }
+    };
+    window.addEventListener('app:save', handleSave);
+    return () => window.removeEventListener('app:save', handleSave);
+  }, [isDirty, isSaving, handleSubmit]);
+
   const onSubmit = async (data: any) => {
     setIsSaving(true);
     setSaveSuccess(false);
@@ -54,11 +72,12 @@ export function Settings() {
     try {
       await db.settings.setItem('appSettings', parsedData);
       setSaveSuccess(true);
+      toast.success('Settings saved successfully!');
       setTimeout(() => setSaveSuccess(false), 3000);
       reset(parsedData);
     } catch (error) {
       console.error('Failed to save settings', error);
-      alert('Failed to save settings. Please try again.');
+      toast.error('Failed to save settings. Please try again.');
     } finally {
       setIsSaving(false);
     }
@@ -86,11 +105,17 @@ export function Settings() {
       const a = document.createElement('a');
       a.href = url;
       a.download = `transport-bill-backup-${new Date().toISOString().split('T')[0]}.json`;
+      // Bug #15: Append to DOM before clicking so Firefox downloads correctly
+      document.body.appendChild(a);
       a.click();
-      URL.revokeObjectURL(url);
+      setTimeout(() => {
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+      }, 100);
+      toast.success('Backup exported successfully!');
     } catch (e) {
       console.error(e);
-      alert("Export failed");
+      toast.error("Export failed");
     } finally {
       setIsExporting(false);
     }
@@ -99,12 +124,13 @@ export function Settings() {
   const handleImport = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
+    setPendingImportFile(file);
+    setIsConfirmOpen(true);
+    e.target.value = '';
+  };
 
-    if (!window.confirm("WARNING: Importing data will overwrite ALL your current invoices and settings. Are you sure you want to proceed?")) {
-      e.target.value = '';
-      return;
-    }
-
+  const executeImport = () => {
+    if (!pendingImportFile) return;
     setIsImporting(true);
     const reader = new FileReader();
     reader.onload = async (event) => {
@@ -123,16 +149,17 @@ export function Settings() {
         await db.invoices.clear();
         for (const k of Object.keys(data.invoices || {})) await db.invoices.setItem(k, data.invoices[k]);
 
-        alert("Data imported successfully! The application will now reload.");
-        window.location.reload();
+        toast.success("Data imported successfully! The application will now reload.");
+        setTimeout(() => window.location.reload(), 1500);
       } catch (err) {
         console.error(err);
-        alert("Failed to import data. Please ensure the file is a valid backup JSON.");
+        toast.error("Failed to import data. Please ensure the file is a valid backup JSON.");
       } finally {
         setIsImporting(false);
+        setPendingImportFile(null);
       }
     };
-    reader.readAsText(file);
+    reader.readAsText(pendingImportFile);
   };
 
   if (isLoading) {
@@ -235,6 +262,19 @@ export function Settings() {
           </div>
         </div>
       </div>
+
+      <ConfirmModal
+        isOpen={isConfirmOpen}
+        onClose={() => {
+          setIsConfirmOpen(false);
+          setPendingImportFile(null);
+        }}
+        onConfirm={executeImport}
+        title="Overwrite All Data?"
+        description="WARNING: Importing data will overwrite ALL your current invoices, customers, and settings. Are you sure you want to proceed?"
+        confirmText="Yes, Import"
+        variant="destructive"
+      />
     </div>
   );
 }

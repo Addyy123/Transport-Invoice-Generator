@@ -1,11 +1,13 @@
 import { useEffect, useState } from 'react';
-import { FileText, IndianRupee, Clock, CheckCircle, Search, Trash2, Eye, Loader2, CreditCard, Share2 } from 'lucide-react';
+import { FileText, IndianRupee, Clock, CheckCircle, Search, Trash2, Eye, Loader2, CreditCard, Share2, Plus, FolderOpen } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
+import { toast } from 'sonner';
 import { db } from '../lib/db';
 import type { Invoice, Customer, Settings } from '../lib/schema';
 // generateId import removed
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
+import { ConfirmModal } from '../components/ui/confirm-modal';
 
 export function Dashboard() {
   const navigate = useNavigate();
@@ -14,6 +16,8 @@ export function Dashboard() {
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [filter, setFilter] = useState<'All' | 'Draft' | 'Pending' | 'Paid' | 'Overdue'>('All');
+  const [deleteInvoiceId, setDeleteInvoiceId] = useState<string | null>(null);
+  const [markPaidInvoice, setMarkPaidInvoice] = useState<Invoice | null>(null);
 
   const loadData = async () => {
     try {
@@ -52,25 +56,35 @@ export function Dashboard() {
     loadData();
   }, []);
 
-  const handleDelete = async (id: string) => {
-    if (window.confirm("Are you sure you want to delete this invoice?")) {
-      await db.invoices.removeItem(id);
-      loadData();
-    }
+  const handleDeleteClick = (id: string) => {
+    setDeleteInvoiceId(id);
   };
 
-  const handleMarkPaid = async (invoice: Invoice) => {
-    if (window.confirm(`Mark invoice ${invoice.invoiceNumber} as fully paid?`)) {
-      const updated = {
-        ...invoice,
-        status: 'Paid' as const,
-        paidAmount: invoice.grandTotal,
-        balanceAmount: 0,
-        updatedAt: Date.now()
-      };
-      await db.invoices.setItem(invoice.id, updated);
-      loadData();
-    }
+  const executeDelete = async () => {
+    if (!deleteInvoiceId) return;
+    await db.invoices.removeItem(deleteInvoiceId);
+    toast.success('Invoice deleted successfully!');
+    setDeleteInvoiceId(null);
+    loadData();
+  };
+
+  const handleMarkPaidClick = (invoice: Invoice) => {
+    setMarkPaidInvoice(invoice);
+  };
+
+  const executeMarkPaid = async () => {
+    if (!markPaidInvoice) return;
+    const updated = {
+      ...markPaidInvoice,
+      status: 'Paid' as const,
+      paidAmount: markPaidInvoice.grandTotal,
+      balanceAmount: 0,
+      updatedAt: Date.now()
+    };
+    await db.invoices.setItem(markPaidInvoice.id, updated);
+    toast.success(`Invoice ${markPaidInvoice.invoiceNumber} marked as fully paid!`);
+    setMarkPaidInvoice(null);
+    loadData();
   };
 
   if (loading) {
@@ -81,7 +95,7 @@ export function Dashboard() {
   const totalInvoices = invoices.length;
   const totalBilled = invoices.reduce((sum, inv) => sum + inv.grandTotal, 0);
   const pendingPayments = invoices.reduce((sum, inv) => sum + inv.balanceAmount, 0);
-  const paidInvoices = invoices.filter(i => i.status === 'Paid' || i.balanceAmount === 0).length;
+  const paidInvoices = invoices.filter(i => i.status === 'Paid').length;
 
   const currency = settings?.currencySymbol || '₹';
 
@@ -199,18 +213,25 @@ export function Dashboard() {
             <tbody className="divide-y">
               {filteredInvoices.length === 0 ? (
                 <tr>
-                  <td colSpan={8} className="px-6 py-12 text-center text-muted-foreground">
-                    <div className="flex flex-col items-center justify-center">
-                      <FileText className="h-12 w-12 text-slate-300 mb-4" />
-                      <p className="text-lg font-medium text-slate-900">No invoices found</p>
-                      <p className="text-sm mt-1">Try adjusting your filters or search terms.</p>
+                  <td colSpan={8} className="px-6 py-16 text-center text-muted-foreground">
+                    <div className="flex flex-col items-center justify-center max-w-md mx-auto">
+                      <div className="p-5 rounded-full bg-primary/10 text-primary mb-4 shadow-inner">
+                        <FolderOpen className="h-12 w-12 stroke-[1.5]" />
+                      </div>
+                      <h3 className="text-lg font-bold text-foreground mb-1">No invoices found</h3>
+                      <p className="text-sm text-muted-foreground text-center mb-6">
+                        {filter !== 'All' || searchTerm !== ''
+                          ? "No invoices match your current search or filter criteria. Try clearing filters to see all transport bills."
+                          : "You haven't generated any transport invoices yet. Create your first bill now to start tracking billing and payments."}
+                      </p>
                       {filter !== 'All' || searchTerm !== '' ? (
-                        <Button variant="link" onClick={() => { setFilter('All'); setSearchTerm(''); }} className="mt-2">
+                        <Button variant="outline" onClick={() => { setFilter('All'); setSearchTerm(''); }} className="gap-2">
                           Clear Filters
                         </Button>
                       ) : (
-                        <Button onClick={() => navigate('/create-invoice')} className="mt-4">
-                          Create your first invoice
+                        <Button onClick={() => navigate('/create-invoice')} className="gap-2 shadow-md">
+                          <Plus className="h-4 w-4" />
+                          Create Your First Invoice
                         </Button>
                       )}
                     </div>
@@ -233,13 +254,46 @@ export function Dashboard() {
                     <td className="px-6 py-4 text-right whitespace-nowrap">
                       <div className="flex justify-end gap-1">
                         {inv.balanceAmount > 0 && (
-                          <Button variant="ghost" size="icon" title="Mark as Paid" onClick={() => handleMarkPaid(inv as Invoice)}>
+                          <Button variant="ghost" size="icon" title="Mark as Paid" onClick={() => handleMarkPaidClick(inv as Invoice)}>
                             <CreditCard className="h-4 w-4 text-emerald-600" />
                           </Button>
                         )}
                         <Button variant="ghost" size="icon" title="Share via Email" onClick={() => {
                           const subject = encodeURIComponent(`Transport Invoice - ${inv.invoiceNumber}`);
-                          const body = encodeURIComponent(`Please find the details for invoice ${inv.invoiceNumber} attached.`);
+                          const formatDate = (dateVal: string | number | Date) => new Date(dateVal).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
+                          const rawBody = `Dear ${inv.customerName || 'Valued Customer'},
+
+We hope this email finds you well.
+
+Please find below the official summary for your transport invoice #${inv.invoiceNumber}, dated ${formatDate(inv.invoiceDate)}.
+
+Note: The official PDF invoice document has been prepared and can be attached to this correspondence.
+
+--------------------------------------------------
+INVOICE SUMMARY
+--------------------------------------------------
+• Invoice Number: ${inv.invoiceNumber}
+• Invoice Date: ${formatDate(inv.invoiceDate)}
+• Payment Due Date: ${formatDate(inv.dueDate)}
+• Current Status: ${inv.status.toUpperCase()}
+
+--------------------------------------------------
+TRANSPORT & FINANCIALS
+--------------------------------------------------
+• Route: ${inv.fromLocation} -> ${inv.toLocation}
+• Grand Total: ${currency}${inv.grandTotal.toFixed(2)}
+• NET BALANCE DUE: ${currency}${inv.balanceAmount.toFixed(2)}
+
+--------------------------------------------------
+
+If you have any questions regarding this invoice, please feel free to reply directly to this email.
+
+Thank you for your continued partnership and business!
+
+Warm regards,
+
+Transport Administration Department`;
+                          const body = encodeURIComponent(rawBody);
                           window.open(`https://mail.google.com/mail/?view=cm&fs=1&to=&su=${subject}&body=${body}`, '_blank');
                         }}>
                           <Share2 className="h-4 w-4 text-slate-600" />
@@ -249,7 +303,7 @@ export function Dashboard() {
                             <Eye className="h-4 w-4 text-blue-600" />
                           </Button>
                         </Link>
-                        <Button variant="ghost" size="icon" onClick={() => handleDelete(inv.id)} title="Delete">
+                        <Button variant="ghost" size="icon" onClick={() => handleDeleteClick(inv.id)} title="Delete">
                           <Trash2 className="h-4 w-4 text-destructive" />
                         </Button>
                       </div>
@@ -261,6 +315,25 @@ export function Dashboard() {
           </table>
         </div>
       </div>
+
+      <ConfirmModal
+        isOpen={!!deleteInvoiceId}
+        onClose={() => setDeleteInvoiceId(null)}
+        onConfirm={executeDelete}
+        title="Delete Invoice?"
+        description="Are you sure you want to delete this invoice? This action cannot be undone."
+        confirmText="Yes, Delete"
+        variant="destructive"
+      />
+
+      <ConfirmModal
+        isOpen={!!markPaidInvoice}
+        onClose={() => setMarkPaidInvoice(null)}
+        onConfirm={executeMarkPaid}
+        title="Mark as Fully Paid?"
+        description={`Are you sure you want to mark Invoice #${markPaidInvoice?.invoiceNumber} as fully paid (${currency}${markPaidInvoice?.grandTotal?.toFixed(2)})?`}
+        confirmText="Yes, Mark Paid"
+      />
     </div>
   );
 }

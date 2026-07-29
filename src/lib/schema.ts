@@ -1,5 +1,20 @@
 import { z } from 'zod';
 
+const processNumber = (val: any) => {
+  if (val === '' || val === null || val === undefined) return undefined;
+  const num = Number(val);
+  return Number.isNaN(num) ? undefined : num;
+};
+
+const processZero = (val: any) => {
+  if (val === '' || val === null || val === undefined) return 0;
+  const num = Number(val);
+  return Number.isNaN(num) ? 0 : num;
+};
+
+const numOpt = z.preprocess(processNumber, z.number().optional());
+const numZero = z.preprocess(processZero, z.number().default(0));
+
 export const companySchema = z.object({
   companyName: z.string().min(1, 'Company Name is required'),
   logo: z.string().optional(),
@@ -60,50 +75,62 @@ export const chargeSchema = z.object({
 export const invoiceSchema = z.object({
   id: z.string(),
   invoiceNumber: z.string().min(1, 'Invoice number is required'),
-  invoiceDate: z.number(),
-  dueDate: z.number(),
+  invoiceDate: numOpt,
+  dueDate: numOpt,
   status: z.enum(['Draft', 'Pending', 'Partially Paid', 'Paid', 'Cancelled', 'Overdue']),
   customerId: z.string().min(1, 'Customer is required'),
+  companyId: z.string().default('profile'),
   
   // Transport Details
+  billingType: z.string().default('STANDARD'),
   lrNumber: z.string().optional(),
   tripNumber: z.string().optional(),
   bookingNumber: z.string().optional(),
-  fromLocation: z.string().min(1, 'From location is required'),
-  toLocation: z.string().min(1, 'To location is required'),
-  distanceKm: z.number().optional(),
+  fromLocation: z.string().optional().or(z.literal('')),
+  toLocation: z.string().optional().or(z.literal('')),
+  distanceKm: numOpt,
   vehicleNumber: z.string().optional(),
   vehicleType: z.string().optional(),
   driverName: z.string().optional(),
   driverPhone: z.string().optional(),
 
+  // Monthly KM Details
+  baseKm: numOpt,
+  baseRate: numOpt,
+  vehicleCapacity: z.string().optional(),
+  extraKmRate: numOpt,
+  periodStart: numOpt,
+  periodEnd: numOpt,
+  startKm: numOpt,
+  endKm: numOpt,
+
   // Consignment Details
   goodsDescription: z.string().optional(),
-  weight: z.number().optional(),
+  weight: numOpt,
   weightUnit: z.string().default('KG'),
-  numberOfPackages: z.number().optional(),
+  numberOfPackages: numOpt,
   consignmentNumber: z.string().optional(),
   remarks: z.string().optional(),
 
   // Charges
-  freightCharge: z.number().min(0).default(0),
+  freightCharge: numZero,
   extraCharges: z.array(chargeSchema).default([]),
-  discount: z.number().min(0).default(0),
+  discount: numZero,
   gstOption: z.enum(['NONE', 'CGST_SGST', 'IGST']).default('NONE'),
-  gstPercentage: z.number().min(0).default(0),
+  gstPercentage: numZero,
   
   // Auto-calculated fields
-  subtotal: z.number().default(0),
-  discountedSubtotal: z.number().default(0),
-  cgstAmount: z.number().default(0),
-  sgstAmount: z.number().default(0),
-  igstAmount: z.number().default(0),
-  grandTotal: z.number().default(0),
+  subtotal: numZero,
+  discountedSubtotal: numZero,
+  cgstAmount: numZero,
+  sgstAmount: numZero,
+  igstAmount: numZero,
+  grandTotal: numZero,
   
   // Payments
-  paidAmount: z.number().min(0).default(0),
-  balanceAmount: z.number().default(0),
-  roundOff: z.number().default(0),
+  paidAmount: numZero,
+  balanceAmount: numZero,
+  roundOff: numZero,
 
   createdAt: z.number(),
   updatedAt: z.number(),

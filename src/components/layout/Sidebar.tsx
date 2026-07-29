@@ -63,6 +63,7 @@ export function Sidebar({ isOpen, setIsOpen }: SidebarProps) {
             <NavLink
               key={item.name}
               to={item.href}
+              end={item.href === '/'}
               onClick={() => {
                 if (window.innerWidth < 1024) setIsOpen(false);
               }}

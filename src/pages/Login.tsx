@@ -1,9 +1,12 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
 import { Building2, Loader2, LogIn } from 'lucide-react';
+import { toast } from 'sonner';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
 import { Label } from '../components/ui/label';
+import { useAuth } from '../components/AuthProvider';
 
 export function Login() {
   const [email, setEmail] = useState('');
@@ -12,7 +15,17 @@ export function Login() {
   const [isSignUp, setIsSignUp] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  const { session, loginAsGuest } = useAuth();
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    if (session) {
+      navigate('/', { replace: true });
+    }
+  }, [session, navigate]);
+
   const handleGoogleLogin = async () => {
+    setError(null);
     try {
       const { error } = await supabase.auth.signInWithOAuth({ provider: 'google' });
       if (error) throw error;
@@ -30,7 +43,7 @@ export function Login() {
       if (isSignUp) {
         const { error } = await supabase.auth.signUp({ email, password });
         if (error) throw error;
-        alert('Success! You are now registered and logged in.');
+        toast.success('Success! You are now registered and logged in.');
       } else {
         const { error } = await supabase.auth.signInWithPassword({ email, password });
         if (error) throw error;
@@ -43,13 +56,13 @@ export function Login() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-slate-50 py-12 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-md w-full space-y-8 bg-white p-10 rounded-xl shadow-lg border border-slate-100">
+    <div className="min-h-screen flex items-center justify-center bg-background text-foreground py-12 px-4 sm:px-6 lg:px-8 transition-colors duration-200">
+      <div className="max-w-md w-full space-y-8 bg-card p-10 rounded-xl shadow-lg border border-border">
         <div className="text-center">
           <div className="mx-auto h-16 w-16 bg-primary/10 rounded-full flex items-center justify-center">
             <Building2 className="h-8 w-8 text-primary" />
           </div>
-          <h2 className="mt-6 text-3xl font-extrabold text-slate-900">
+          <h2 className="mt-6 text-3xl font-extrabold text-foreground">
             Alex Logistics
           </h2>
           <p className="mt-2 text-sm text-slate-600">
@@ -151,8 +164,29 @@ export function Login() {
             </svg>
             Google
           </Button>
+
+          {(import.meta.env.DEV || window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') && (
+            <div className="mt-4 pt-4 border-t border-slate-100">
+              <Button 
+                type="button" 
+                variant="secondary" 
+                className="w-full flex justify-center items-center py-2.5 bg-amber-50 text-amber-900 border border-amber-300 hover:bg-amber-100 font-semibold shadow-sm transition-all"
+                onClick={() => {
+                  loginAsGuest();
+                  navigate('/', { replace: true });
+                }}
+              >
+                <span className="mr-2 text-lg">🧪</span>
+                Continue as Guest (Local Test Mode)
+              </Button>
+              <p className="text-center text-xs text-amber-700 mt-1.5 font-medium">
+                Bypasses Google OAuth & Vercel redirect for local testing
+              </p>
+            </div>
+          )}
         </form>
       </div>
     </div>
   );
 }
+

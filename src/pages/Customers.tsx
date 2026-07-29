@@ -2,18 +2,21 @@ import { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Users, Search, Plus, Edit, Trash2, X } from 'lucide-react';
+import { toast } from 'sonner';
 import { db } from '../lib/db';
 import { customerSchema, type Customer } from '../lib/schema';
 import { generateId } from '../lib/utils';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
 import { Label } from '../components/ui/label';
+import { ConfirmModal } from '../components/ui/confirm-modal';
 
 export function Customers() {
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [search, setSearch] = useState('');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingCustomer, setEditingCustomer] = useState<Customer | null>(null);
+  const [deleteCustomerId, setDeleteCustomerId] = useState<string | null>(null);
 
   const { register, handleSubmit, reset, formState: { errors } } = useForm<Customer>({
     resolver: zodResolver(customerSchema)
@@ -72,18 +75,17 @@ export function Customers() {
     data.updatedAt = Date.now();
     try {
       await db.customers.setItem(data.id, data);
+      toast.success(editingCustomer ? 'Customer updated successfully!' : 'Customer added successfully!');
       handleCloseModal();
       loadCustomers();
     } catch (error) {
       console.error('Failed to save customer', error);
-      alert('Failed to save customer.');
+      toast.error('Failed to save customer.');
     }
   };
 
-  const handleDelete = async (id: string) => {
-    if (!confirm('Are you sure you want to delete this customer?')) return;
+  const handleDeleteClick = async (id: string) => {
     try {
-      // Check for linked invoices
       const invKeys = await db.invoices.keys();
       let hasInvoices = false;
       for (const key of invKeys) {
@@ -95,14 +97,28 @@ export function Customers() {
       }
       
       if (hasInvoices) {
-        alert("Cannot delete this customer because they have existing invoices. Please delete the invoices first.");
+        toast.error("Cannot delete this customer because they have existing invoices. Please delete the invoices first.");
         return;
       }
 
-      await db.customers.removeItem(id);
+      setDeleteCustomerId(id);
+    } catch (error) {
+      console.error('Failed to check customer invoices', error);
+      toast.error('Could not verify customer invoices. Please try again.');
+    }
+  };
+
+  const executeDelete = async () => {
+    if (!deleteCustomerId) return;
+    try {
+      await db.customers.removeItem(deleteCustomerId);
+      toast.success("Customer deleted successfully!");
       loadCustomers();
     } catch (error) {
       console.error('Failed to delete customer', error);
+      toast.error("Failed to delete customer.");
+    } finally {
+      setDeleteCustomerId(null);
     }
   };
 
@@ -154,8 +170,22 @@ export function Customers() {
             <tbody>
               {filteredCustomers.length === 0 ? (
                 <tr>
-                  <td colSpan={4} className="px-6 py-8 text-center text-muted-foreground">
-                    No customers found.
+                  <td colSpan={4} className="px-6 py-16 text-center text-muted-foreground">
+                    <div className="flex flex-col items-center justify-center max-w-sm mx-auto">
+                      <div className="p-4 rounded-full bg-slate-100 text-slate-400 mb-4">
+                        <Users className="h-10 w-10" />
+                      </div>
+                      <h4 className="text-base font-semibold text-foreground mb-1">No customers found</h4>
+                      <p className="text-sm text-muted-foreground text-center mb-6">
+                        {search ? "We couldn't find any customers matching your search query. Try adjusting your search term." : "Get started by adding your first party or freight customer to quickly generate transport invoices."}
+                      </p>
+                      {!search && (
+                        <Button onClick={() => handleOpenModal()} className="gap-2">
+                          <Plus className="h-4 w-4" />
+                          Add Your First Customer
+                        </Button>
+                      )}
+                    </div>
                   </td>
                 </tr>
               ) : (
@@ -177,7 +207,7 @@ export function Customers() {
                       <Button variant="ghost" size="icon" onClick={() => handleOpenModal(customer)}>
                         <Edit className="h-4 w-4" />
                       </Button>
-                      <Button variant="ghost" size="icon" className="text-destructive hover:text-destructive" onClick={() => handleDelete(customer.id)}>
+                      <Button variant="ghost" size="icon" className="text-destructive hover:text-destructive" onClick={() => handleDeleteClick(customer.id)}>
                         <Trash2 className="h-4 w-4" />
                       </Button>
                     </td>
@@ -204,7 +234,7 @@ export function Customers() {
             <form onSubmit={handleSubmit(onSubmit)} className="p-6 space-y-6">
               <div className="grid gap-6 md:grid-cols-2">
                 <div className="space-y-2 md:col-span-2">
-                  <Label htmlFor="customerName">Customer Name *</Label>
+                  <Label htmlFor="customerName">Customer Name</Label>
                   <Input id="customerName" {...register('customerName')} />
                   {errors.customerName && <p className="text-sm text-destructive">{errors.customerName.message}</p>}
                 </div>
@@ -261,14 +291,24 @@ export function Customers() {
                 </div>
               </div>
               
-              <div className="flex justify-end gap-2 pt-4 border-t">
+              <div className="flex justify-end gap-4 pt-4 border-t">
                 <Button type="button" variant="outline" onClick={handleCloseModal}>Cancel</Button>
-                <Button type="submit">Save Customer</Button>
+                <Button type="submit">{editingCustomer ? 'Update' : 'Save'} Customer</Button>
               </div>
             </form>
           </div>
         </div>
       )}
+
+      <ConfirmModal
+        isOpen={!!deleteCustomerId}
+        onClose={() => setDeleteCustomerId(null)}
+        onConfirm={executeDelete}
+        title="Delete Customer?"
+        description="Are you sure you want to delete this customer? This action cannot be undone."
+        confirmText="Yes, Delete"
+        variant="destructive"
+      />
     </div>
   );
 }

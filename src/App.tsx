@@ -9,6 +9,7 @@ import { InvoicePreview } from './pages/InvoicePreview';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import { AuthProvider, useAuth } from './components/AuthProvider';
 import { Login } from './pages/Login';
+import { Toaster } from 'sonner';
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { session } = useAuth();
@@ -22,6 +23,7 @@ function App() {
   return (
     <ErrorBoundary>
       <AuthProvider>
+        <Toaster position="top-right" richColors closeButton />
         <BrowserRouter>
           <Routes>
             <Route path="/login" element={<Login />} />
