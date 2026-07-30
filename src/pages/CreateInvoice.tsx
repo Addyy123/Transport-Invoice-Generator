@@ -697,7 +697,7 @@ export function CreateInvoice() {
               </div>
               <div className="space-y-2">
                 <Label htmlFor="vehicleNumber">Vehicle Number</Label>
-                <Input id="vehicleNumber" list="vehicleList" {...register('vehicleNumber')} />
+                <Input id="vehicleNumber" list="vehicleList" autoComplete="off" {...register('vehicleNumber')} />
                 <datalist id="vehicleList">
                   {(companyVehicles[selectedCompanyId || 'profile'] || []).map(v => (
                     <option key={v} value={v} />
