@@ -632,7 +632,7 @@ function MonthlyKmPreview({ invoice, company, customer, amountToWords }: any) {
           {/* Main Info Row */}
           <tr className="border-none">
             <td className="border-r-[2px] border-black p-2 text-center text-[15px] align-top font-semibold">1</td>
-            <td className="border-r-[2px] border-black p-2 pb-4 flex flex-col align-top font-semibold">
+            <td className="border-r-[2px] border-black p-2 pb-4 align-top font-semibold">
               <div className="font-bold underline text-[15px] mb-1">
                 A. Minimum Monthly Billing : {invoice.baseKm || 0} KM.
               </div>
@@ -673,8 +673,8 @@ function MonthlyKmPreview({ invoice, company, customer, amountToWords }: any) {
           {/* Sub Table Header Row */}
           <tr className="border-none text-[14px] font-semibold">
             <td className="border-r-[2px] border-black"></td>
-            <td className="border-r-[2px] border-black p-1 pr-16 flex justify-end">
-              <div className="flex w-[55%] justify-between">
+            <td className="border-r-[2px] border-black p-1 pr-16">
+              <div className="flex w-[55%] justify-between ml-auto">
                 <span className="underline mr-auto">Transport Charges</span>
                 <span className="w-16 text-right">KM</span>
                 <span className="w-24 text-right">Rate, Rs</span>
@@ -686,8 +686,8 @@ function MonthlyKmPreview({ invoice, company, customer, amountToWords }: any) {
           {/* Sub Table Row 1 (Base KM) */}
           <tr className="border-none text-[14px] font-semibold">
             <td className="border-r-[2px] border-black"></td>
-            <td className="border-r-[2px] border-black p-1 pr-16 flex justify-end">
-              <div className="flex w-[55%] justify-end">
+            <td className="border-r-[2px] border-black p-1 pr-16">
+              <div className="flex w-[55%] justify-end ml-auto">
                 <span className="w-16 text-right">{invoice.baseKm || 0}</span>
                 <span className="w-24 text-right">{(invoice.baseRate || 0).toFixed(2)}</span>
               </div>
@@ -700,8 +700,8 @@ function MonthlyKmPreview({ invoice, company, customer, amountToWords }: any) {
           {/* Sub Table Row 2 (Extra KM) */}
           <tr className="border-none text-[14px] font-semibold">
             <td className="border-r-[2px] border-black"></td>
-            <td className="border-r-[2px] border-black p-1 pb-4 pr-16 flex justify-end">
-              <div className="flex w-[55%] justify-end">
+            <td className="border-r-[2px] border-black p-1 pb-4 pr-16">
+              <div className="flex w-[55%] justify-end ml-auto">
                 <span className="w-16 text-right">{Math.max(0, (invoice.endKm || 0) - (invoice.startKm || 0) - (invoice.baseKm || 0))}</span>
                 <span className="w-24 text-right">{(invoice.extraKmRate || 0).toFixed(2)}</span>
               </div>
@@ -714,10 +714,12 @@ function MonthlyKmPreview({ invoice, company, customer, amountToWords }: any) {
           {/* Summary rows */}
           <tr className="border-t-[2px] border-black font-bold text-[14px]">
              <td className="border-r-[2px] border-black p-1.5"></td>
-             <td className="border-r-[2px] border-black p-1.5 pl-2 flex justify-between pr-4">
+             <td className="border-r-[2px] border-black p-1.5 pl-2 pr-4">
+               <div className="flex justify-between">
                 <span>TOTAL</span>
                 <span className="ml-auto mr-12">{Math.max(0, (invoice.endKm || 0) - (invoice.startKm || 0))} <span className="ml-2">KM</span></span>
                 <span className="mr-8">Rs.</span>
+               </div>
              </td>
              <td className="p-1.5 pr-2 text-right">
                 {invoice.grandTotal.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
