@@ -26,6 +26,10 @@ export function CreateInvoice() {
   const [viewMode, setViewMode] = useState<'wizard' | 'all'>('wizard');
   const [companyVehicles, setCompanyVehicles] = useState<Record<string, string[]>>({});
   
+  const [isVehicleDropdownOpen, setIsVehicleDropdownOpen] = useState(false);
+  const vehicleDropdownRef = useRef<HTMLDivElement>(null);
+  const vehicleInputRef = useRef<HTMLInputElement>(null);
+  
   const [isQuickCompanyOpen, setIsQuickCompanyOpen] = useState(false);
   const [quickCompanyData, setQuickCompanyData] = useState({ companyName: '', gstNumber: '', city: '', phone: '' });
   
@@ -64,6 +68,7 @@ export function CreateInvoice() {
 
   // Watch fields for live calculation
   const selectedCompanyId = useWatch({ control, name: 'companyId' });
+  const currentVehicleNumber = useWatch({ control, name: 'vehicleNumber' }) || '';
   const freightCharge = useWatch({ control, name: 'freightCharge' }) || 0;
   const extraCharges = useWatch({ control, name: 'extraCharges' }) || [];
   const discount = useWatch({ control, name: 'discount' }) || 0;
@@ -137,6 +142,19 @@ export function CreateInvoice() {
     }
     
   }, [freightCharge, extraCharges, discount, gstOption, gstPercentage, paidAmount, billingType, startKm, endKm, baseKm, baseRate, extraKmRate, setValue]);
+
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (vehicleDropdownRef.current && !vehicleDropdownRef.current.contains(event.target as Node) && 
+          vehicleInputRef.current && !vehicleInputRef.current.contains(event.target as Node)) {
+        setIsVehicleDropdownOpen(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, []);
 
   useEffect(() => {
     async function loadData() {
@@ -554,7 +572,7 @@ export function CreateInvoice() {
               </h3>
               {viewMode === 'wizard' && <span className="text-xs text-muted-foreground font-semibold">Step 1 of 4</span>}
             </div>
-            <div className="p-6 grid gap-6 md:grid-cols-2 lg:grid-cols-4">
+            <div className="p-6 grid gap-6 md:grid-cols-2">
               <div className="space-y-2">
                 <Label htmlFor="invoiceNumber">Invoice Number</Label>
                 <Input id="invoiceNumber" {...register('invoiceNumber')} />
@@ -569,31 +587,6 @@ export function CreateInvoice() {
                   onChange={(e) => handleDateChange('invoiceDate', e.target.value)} 
                 />
               </div>
-              <div className="space-y-2">
-                <Label htmlFor="dueDate">Due Date</Label>
-                <Input 
-                  id="dueDate" 
-                  type="date" 
-                  value={formatDateForInput(dueDate)}
-                  onChange={(e) => handleDateChange('dueDate', e.target.value)} 
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="status">Status</Label>
-                <select 
-                  id="status" 
-                  className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-                  {...register('status')}
-                >
-                  <option value="Draft">Draft</option>
-                  <option value="Pending">Pending</option>
-                  <option value="Partially Paid">Partially Paid</option>
-                  <option value="Paid">Paid</option>
-                  <option value="Cancelled">Cancelled</option>
-                  <option value="Overdue">Overdue</option>
-                </select>
-              </div>
-
               <div className="space-y-2 md:col-span-2 lg:col-span-2">
                 <div className="flex justify-between items-center">
                   <Label htmlFor="companyId" className="font-bold text-slate-800">From Company (Biller)</Label>
@@ -662,7 +655,7 @@ export function CreateInvoice() {
                   }}
                   className="gap-2 px-6 shadow-sm"
                 >
-                  Next: Transport Details <ArrowRight className="h-4 w-4" />
+                  Next<span className="hidden sm:inline">: Transport Details</span> <ArrowRight className="h-4 w-4" />
                 </Button>
               </div>
             )}
@@ -691,30 +684,47 @@ export function CreateInvoice() {
                 <Input id="toLocation" {...register('toLocation')} />
                 {errors.toLocation && <p className="text-sm text-destructive">{String(errors.toLocation.message)}</p>}
               </div>
-              <div className="space-y-2">
-                <Label htmlFor="distanceKm">Distance (KM)</Label>
-                <Input id="distanceKm" type="number" {...register('distanceKm', { valueAsNumber: true })} />
-              </div>
-              <div className="space-y-2">
+              <div className="space-y-2 relative">
                 <Label htmlFor="vehicleNumber">Vehicle Number</Label>
-                <Input id="vehicleNumber" list="vehicleList" autoComplete="off" {...register('vehicleNumber')} />
-                <datalist id="vehicleList">
-                  {(companyVehicles[selectedCompanyId || 'profile'] || []).map(v => (
-                    <option key={v} value={v} />
-                  ))}
-                </datalist>
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="driverName">Driver Name</Label>
-                <Input id="driverName" {...register('driverName')} />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="driverPhone">Driver Phone</Label>
-                <Input id="driverPhone" {...register('driverPhone')} />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="lrNumber">LR / Bilty Number</Label>
-                <Input id="lrNumber" {...register('lrNumber')} />
+                <Input 
+                  id="vehicleNumber" 
+                  autoComplete="off" 
+                  {...register('vehicleNumber')} 
+                  onFocus={() => setIsVehicleDropdownOpen(true)}
+                  ref={(e) => {
+                    register('vehicleNumber').ref(e);
+                    vehicleInputRef.current = e;
+                  }}
+                />
+                {isVehicleDropdownOpen && (
+                  <div 
+                    ref={vehicleDropdownRef}
+                    className="absolute top-[calc(100%-4px)] left-0 z-50 w-full mt-1 bg-white border border-slate-200 rounded-md shadow-lg max-h-60 overflow-auto flex flex-col"
+                  >
+                    {(() => {
+                      const list = companyVehicles[selectedCompanyId || 'profile'] || [];
+                      const filtered = list.filter(v => v.toLowerCase().includes(String(currentVehicleNumber).toLowerCase()));
+                      if (list.length === 0) {
+                        return <div className="px-3 py-2 text-sm text-slate-500 italic">No vehicles saved in profile</div>;
+                      }
+                      if (filtered.length === 0) {
+                        return <div className="px-3 py-2 text-sm text-slate-500 italic">No matching vehicles</div>;
+                      }
+                      return filtered.map(v => (
+                        <div 
+                          key={v}
+                          className="px-3 py-2 text-sm cursor-pointer hover:bg-slate-100 transition-colors"
+                          onClick={() => {
+                            setValue('vehicleNumber', v, { shouldDirty: true });
+                            setIsVehicleDropdownOpen(false);
+                          }}
+                        >
+                          {v}
+                        </div>
+                      ));
+                    })()}
+                  </div>
+                )}
               </div>
             </div>
             {viewMode === 'wizard' && (
@@ -728,7 +738,7 @@ export function CreateInvoice() {
                   }}
                   className="gap-2 shadow-sm"
                 >
-                  <ArrowLeft className="h-4 w-4" /> Previous: Invoice Details
+                  <ArrowLeft className="h-4 w-4" /> Previous<span className="hidden sm:inline">: Invoice Details</span>
                 </Button>
                 <Button
                   type="button"
@@ -743,7 +753,7 @@ export function CreateInvoice() {
                   }}
                   className="gap-2 px-6 shadow-sm"
                 >
-                  Next: Consignment Details <ArrowRight className="h-4 w-4" />
+                  Next<span className="hidden sm:inline">: Consignment Details</span> <ArrowRight className="h-4 w-4" />
                 </Button>
               </div>
             )}
@@ -798,7 +808,7 @@ export function CreateInvoice() {
                 }}
                 className="gap-2 shadow-sm"
               >
-                <ArrowLeft className="h-4 w-4" /> Previous: Transport Details
+                <ArrowLeft className="h-4 w-4" /> Previous<span className="hidden sm:inline">: Transport Details</span>
               </Button>
               <Button
                 type="button"
@@ -808,7 +818,7 @@ export function CreateInvoice() {
                 }}
                 className="gap-2 px-6 shadow-sm"
               >
-                Next: Charges & Totals <ArrowRight className="h-4 w-4" />
+                Next<span className="hidden sm:inline">: Charges & Totals</span> <ArrowRight className="h-4 w-4" />
               </Button>
             </div>
           )}
@@ -1002,7 +1012,7 @@ export function CreateInvoice() {
                 }}
                 className="gap-2 w-full sm:w-auto order-2 sm:order-1 shadow-sm"
               >
-                <ArrowLeft className="h-4 w-4" /> Previous: Consignment Details
+                <ArrowLeft className="h-4 w-4" /> Previous<span className="hidden sm:inline">: Consignment Details</span>
               </Button>
             ) : <div className="hidden sm:block" />}
             <Button type="submit" className="w-full sm:w-64 text-lg h-12 gap-2 order-1 sm:order-2 shadow-md" disabled={isSaving}>
