@@ -2,13 +2,13 @@ import { useEffect, useRef, useState } from 'react';
 import { useForm, useFieldArray, useWatch } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { FileText, Save, Plus, Trash2, Calculator, Loader2, History, RotateCcw, Truck, Package, ArrowRight, ArrowLeft, Check, Layers, LayoutList } from 'lucide-react';
+import { FileText, Save, Plus, Trash2, Calculator, Loader2, History, RotateCcw, Truck, ArrowRight, ArrowLeft, Check, Layers, LayoutList } from 'lucide-react';
 import { toast } from 'sonner';
 import { db } from '../lib/db';
 import { invoiceSchema, type Invoice, type Customer, type CompanyProfile, type Settings as AppSettings } from '../lib/schema';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
-import { Textarea } from '../components/ui/textarea';
+
 import { Label } from '../components/ui/label';
 import { useNavigate, useParams } from 'react-router-dom';
 import { generateId } from '../lib/utils';
