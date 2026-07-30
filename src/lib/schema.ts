@@ -35,6 +35,7 @@ export const companySchema = z.object({
   upiId: z.string().optional(),
   termsAndConditions: z.string().optional(),
   authorizedSignature: z.string().optional(),
+  vehicles: z.array(z.string()).optional(),
 });
 
 export type CompanyProfile = z.infer<typeof companySchema>;

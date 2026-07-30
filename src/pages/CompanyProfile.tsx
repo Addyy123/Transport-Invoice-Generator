@@ -44,6 +44,7 @@ export function CompanyProfile() {
       upiId: '',
       termsAndConditions: '',
       authorizedSignature: '',
+      vehicles: [],
     },
   });
 
@@ -80,6 +81,7 @@ export function CompanyProfile() {
           upiId: '',
           termsAndConditions: '',
           authorizedSignature: '',
+          vehicles: [],
         };
         loaded.push(def);
       }
@@ -140,6 +142,7 @@ export function CompanyProfile() {
       upiId: '',
       termsAndConditions: '',
       authorizedSignature: '',
+      vehicles: [],
     };
     setCompanies([...companies, newComp]);
     setCurrentId(newId);
@@ -375,6 +378,30 @@ export function CompanyProfile() {
             <div className="space-y-2">
               <Label htmlFor="upiId">UPI ID</Label>
               <Input id="upiId" placeholder="e.g. acme@upi" {...register('upiId')} />
+            </div>
+          </div>
+        </div>
+
+        <div className="rounded-xl border bg-card text-card-foreground shadow-sm">
+          <div className="p-6 border-b border-border bg-slate-50/50">
+            <h3 className="font-semibold text-lg">Vehicles</h3>
+          </div>
+          <div className="p-6">
+            <div className="space-y-2">
+              <Label htmlFor="vehicles">Registered Vehicles (One per line)</Label>
+              <textarea
+                id="vehicles"
+                key={currentId}
+                rows={4}
+                className="flex min-h-[80px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                placeholder={"e.g.\nMH-04-AB-1234\nMH-48-XY-5678"}
+                defaultValue={(companies.find(c => (c.id || 'profile') === currentId)?.vehicles || []).join('\n')}
+                onChange={(e) => {
+                  const val = e.target.value.split('\n').map(v => v.trim()).filter(Boolean);
+                  setValue('vehicles', val, { shouldDirty: true });
+                }}
+              />
+              <p className="text-xs text-muted-foreground">These vehicles will appear in a dropdown when creating an invoice for this company.</p>
             </div>
           </div>
         </div>

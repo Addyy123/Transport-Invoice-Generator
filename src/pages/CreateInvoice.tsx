@@ -24,6 +24,7 @@ export function CreateInvoice() {
   const [hasDraft, setHasDraft] = useState(false);
   const [currentStep, setCurrentStep] = useState(1);
   const [viewMode, setViewMode] = useState<'wizard' | 'all'>('wizard');
+  const [companyVehicles, setCompanyVehicles] = useState<Record<string, string[]>>({});
   
   const [isQuickCompanyOpen, setIsQuickCompanyOpen] = useState(false);
   const [quickCompanyData, setQuickCompanyData] = useState({ companyName: '', gstNumber: '', city: '', phone: '' });
@@ -62,6 +63,7 @@ export function CreateInvoice() {
   });
 
   // Watch fields for live calculation
+  const selectedCompanyId = useWatch({ control, name: 'companyId' });
   const freightCharge = useWatch({ control, name: 'freightCharge' }) || 0;
   const extraCharges = useWatch({ control, name: 'extraCharges' }) || [];
   const discount = useWatch({ control, name: 'discount' }) || 0;
@@ -173,6 +175,13 @@ export function CreateInvoice() {
           setAppSettings(settings);
         }
 
+        // Convert company vehicles for state
+        const convertedVehiclesMap: Record<string, string[]> = {};
+        for (const comp of compList) {
+          convertedVehiclesMap[comp.id || 'profile'] = comp.vehicles || [];
+        }
+        setCompanyVehicles(convertedVehiclesMap);
+
         if (id) {
           const existingInvoice = await db.invoices.getItem<Invoice>(id);
           if (existingInvoice) {
@@ -182,6 +191,7 @@ export function CreateInvoice() {
           if (settings) {
             setValue('gstPercentage', settings.defaultGstPercentage);
           }
+          
           // Auto generate invoice number based on prefix and max number
           const iKeys = await db.invoices.keys();
           let maxNumber = 0;
@@ -687,7 +697,12 @@ export function CreateInvoice() {
               </div>
               <div className="space-y-2">
                 <Label htmlFor="vehicleNumber">Vehicle Number</Label>
-                <Input id="vehicleNumber" {...register('vehicleNumber')} />
+                <Input id="vehicleNumber" list="vehicleList" {...register('vehicleNumber')} />
+                <datalist id="vehicleList">
+                  {(companyVehicles[selectedCompanyId || 'profile'] || []).map(v => (
+                    <option key={v} value={v} />
+                  ))}
+                </datalist>
               </div>
               <div className="space-y-2">
                 <Label htmlFor="driverName">Driver Name</Label>
