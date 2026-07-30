@@ -462,12 +462,11 @@ export function CreateInvoice() {
         </div>
 
         {viewMode === 'wizard' && (
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-2.5 pt-1">
+          <div className="grid grid-cols-2 lg:grid-cols-3 gap-2.5 pt-1">
             {[
               { step: 1, title: 'Invoice Details', icon: FileText, desc: 'Basic info & customer' },
               { step: 2, title: 'Transport Details', icon: Truck, desc: 'Route & vehicle' },
-              { step: 3, title: 'Consignment', icon: Package, desc: 'Goods & weight' },
-              { step: 4, title: 'Charges & Totals', icon: Calculator, desc: 'Freight & taxes' },
+              { step: 3, title: 'Charges & Totals', icon: Calculator, desc: 'Freight & taxes' },
             ].map((item) => {
               const isActive = currentStep === item.step;
               const isPassed = currentStep > item.step;
@@ -570,7 +569,7 @@ export function CreateInvoice() {
                 <FileText className="h-5 w-5 text-primary" />
                 {viewMode === 'wizard' ? 'Step 1: Invoice Details' : 'Invoice Details'}
               </h3>
-              {viewMode === 'wizard' && <span className="text-xs text-muted-foreground font-semibold">Step 1 of 4</span>}
+              {viewMode === 'wizard' && <span className="text-xs text-muted-foreground font-semibold">Step 1 of 3</span>}
             </div>
             <div className="p-6 grid gap-6 md:grid-cols-2">
               <div className="space-y-2">
@@ -670,7 +669,7 @@ export function CreateInvoice() {
                 <Truck className="h-5 w-5 text-primary" />
                 {viewMode === 'wizard' ? 'Step 2: Transport Details' : 'Transport Details'}
               </h3>
-              {viewMode === 'wizard' && <span className="text-xs text-muted-foreground font-semibold">Step 2 of 4</span>}
+              {viewMode === 'wizard' && <span className="text-xs text-muted-foreground font-semibold">Step 2 of 3</span>}
             </div>
             {/* Bug #1: Fixed JSX indentation — content div is now correctly inside the outer card div */}
             <div className="p-6 grid gap-6 md:grid-cols-2 lg:grid-cols-3">
@@ -753,87 +752,23 @@ export function CreateInvoice() {
                   }}
                   className="gap-2 px-6 shadow-sm"
                 >
-                  Next<span className="hidden sm:inline">: Consignment Details</span> <ArrowRight className="h-4 w-4" />
+                  Next<span className="hidden sm:inline">: Charges & Totals</span> <ArrowRight className="h-4 w-4" />
                 </Button>
               </div>
             )}
           </div>
         )}
 
-      {/* Consignment Details */}
-      {(viewMode === 'all' || currentStep === 3) && (
-        <div className="rounded-xl border bg-card text-card-foreground shadow-sm animate-in fade-in-50 duration-200">
-          <div className="p-6 border-b border-border bg-slate-50/50 flex justify-between items-center">
-            <h3 className="font-semibold text-lg flex items-center gap-2">
-              <Package className="h-5 w-5 text-primary" />
-              {viewMode === 'wizard' ? 'Step 3: Consignment Details' : 'Consignment Details'}
-            </h3>
-            {viewMode === 'wizard' && <span className="text-xs text-muted-foreground font-semibold">Step 3 of 4</span>}
-          </div>
-          <div className="p-6 grid gap-6 md:grid-cols-2">
-            <div className="space-y-2 md:col-span-2">
-              <Label htmlFor="goodsDescription">Goods Description</Label>
-              <Textarea id="goodsDescription" rows={3} placeholder="Enter details about the goods being transported..." {...register('goodsDescription')} />
-            </div>
-            <div className="space-y-2 flex gap-2">
-              <div className="flex-1">
-                <Label htmlFor="weight">Weight</Label>
-                <Input id="weight" type="number" step="0.01" {...register('weight', { valueAsNumber: true })} />
-              </div>
-              <div className="w-24">
-                <Label htmlFor="weightUnit">Unit</Label>
-                <select id="weightUnit" className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring" {...register('weightUnit')}>
-                  <option value="KG">KG</option>
-                  <option value="TON">TON</option>
-                </select>
-              </div>
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="numberOfPackages">Number of Packages</Label>
-              <Input id="numberOfPackages" type="number" {...register('numberOfPackages', { valueAsNumber: true })} />
-            </div>
-            <div className="space-y-2 md:col-span-2">
-              <Label htmlFor="remarks">Remarks / Notes</Label>
-              <Textarea id="remarks" rows={4} placeholder="Any additional notes or terms for this consignment..." {...register('remarks')} />
-            </div>
-          </div>
-          {viewMode === 'wizard' && (
-            <div className="p-4 sm:p-6 bg-slate-50/50 border-t flex justify-between">
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => {
-                  setCurrentStep(2);
-                  window.scrollTo({ top: 0, behavior: 'smooth' });
-                }}
-                className="gap-2 shadow-sm"
-              >
-                <ArrowLeft className="h-4 w-4" /> Previous<span className="hidden sm:inline">: Transport Details</span>
-              </Button>
-              <Button
-                type="button"
-                onClick={() => {
-                  setCurrentStep(4);
-                  window.scrollTo({ top: 0, behavior: 'smooth' });
-                }}
-                className="gap-2 px-6 shadow-sm"
-              >
-                Next<span className="hidden sm:inline">: Charges & Totals</span> <ArrowRight className="h-4 w-4" />
-              </Button>
-            </div>
-          )}
-        </div>
-      )}
 
       {/* Charges and Calculation */}
-      {(viewMode === 'all' || currentStep === 4) && (
+      {(viewMode === 'all' || currentStep === 3) && (
         <div className="rounded-xl border bg-card text-card-foreground shadow-sm overflow-hidden animate-in fade-in-50 duration-200">
           <div className="p-6 border-b border-border bg-slate-50/50 flex justify-between items-center">
             <h3 className="font-semibold text-lg flex items-center gap-2">
               <Calculator className="h-5 w-5 text-primary" />
-              {viewMode === 'wizard' ? 'Step 4: Charges & Totals' : 'Charges & Totals'}
+              {viewMode === 'wizard' ? 'Step 3: Charges & Totals' : 'Charges & Totals'}
             </h3>
-            {viewMode === 'wizard' && <span className="text-xs text-muted-foreground font-semibold">Step 4 of 4</span>}
+            {viewMode === 'wizard' && <span className="text-xs text-muted-foreground font-semibold">Step 3 of 3</span>}
           </div>
           
           <div className="p-6 grid gap-6 md:grid-cols-12">
@@ -1007,12 +942,12 @@ export function CreateInvoice() {
                 type="button"
                 variant="outline"
                 onClick={() => {
-                  setCurrentStep(3);
+                  setCurrentStep(2);
                   window.scrollTo({ top: 0, behavior: 'smooth' });
                 }}
                 className="gap-2 w-full sm:w-auto order-2 sm:order-1 shadow-sm"
               >
-                <ArrowLeft className="h-4 w-4" /> Previous<span className="hidden sm:inline">: Consignment Details</span>
+                <ArrowLeft className="h-4 w-4" /> Previous<span className="hidden sm:inline">: Transport Details</span>
               </Button>
             ) : <div className="hidden sm:block" />}
             <Button type="submit" className="w-full sm:w-64 text-lg h-12 gap-2 order-1 sm:order-2 shadow-md" disabled={isSaving}>
