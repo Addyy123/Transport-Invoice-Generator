@@ -77,7 +77,7 @@ export function CreateInvoice() {
   const paidAmount = useWatch({ control, name: 'paidAmount' }) || 0;
   
   const invoiceDate = useWatch({ control, name: 'invoiceDate' });
-  const dueDate = useWatch({ control, name: 'dueDate' });
+
 
   // Monthly KM Billing watches
   const billingType = useWatch({ control, name: 'billingType' });
