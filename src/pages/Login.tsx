@@ -76,7 +76,7 @@ export function Login() {
               {error}
             </div>
           )}
-          
+
           <div className="space-y-4">
             <div className="space-y-2">
               <Label htmlFor="email-address">Email address</Label>
@@ -118,10 +118,10 @@ export function Login() {
               </>
             )}
           </Button>
-          
+
           <div className="text-center mt-4">
-            <button 
-              type="button" 
+            <button
+              type="button"
               onClick={() => setIsSignUp(!isSignUp)}
               className="text-sm font-medium text-primary hover:text-primary/80 transition-colors"
             >
@@ -138,9 +138,9 @@ export function Login() {
             </div>
           </div>
 
-          <Button 
-            type="button" 
-            variant="outline" 
+          <Button
+            type="button"
+            variant="outline"
             className="w-full flex justify-center py-2.5 bg-white text-slate-700 hover:bg-slate-50"
             onClick={handleGoogleLogin}
           >
@@ -167,9 +167,9 @@ export function Login() {
 
           {(import.meta.env.DEV || window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') && (
             <div className="mt-4 pt-4 border-t border-slate-100">
-              <Button 
-                type="button" 
-                variant="secondary" 
+              <Button
+                type="button"
+                variant="secondary"
                 className="w-full flex justify-center items-center py-2.5 bg-amber-50 text-amber-900 border border-amber-300 hover:bg-amber-100 font-semibold shadow-sm transition-all"
                 onClick={() => {
                   loginAsGuest();

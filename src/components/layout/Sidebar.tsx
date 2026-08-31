@@ -6,12 +6,14 @@ import {
   Building2, 
   Settings,
   X,
-  Menu
+  Menu,
+  MapPin
 } from 'lucide-react';
 
 const navigation = [
   { name: 'Dashboard', href: '/', icon: LayoutDashboard },
   { name: 'Create Invoice', href: '/create-invoice', icon: FileText },
+  { name: 'Local Bill', href: '/create-local-bill', icon: MapPin },
   { name: 'Customers', href: '/customers', icon: Users },
   { name: 'Company Profile', href: '/profile', icon: Building2 },
   { name: 'Settings', href: '/settings', icon: Settings },

@@ -181,17 +181,19 @@ ${senderName}` +
 
       {/* Printable Invoice Sheet */}
       <div className="w-full overflow-x-auto pb-8 print:pb-0">
-        <div className={invoice.billingType === 'MONTHLY_KM' 
-          ? "bg-white text-black p-4 md:p-8 print:p-0 min-w-[700px] md:min-w-0 max-w-[210mm] min-h-[297mm] mx-auto print:w-[210mm] print:h-[297mm] print:overflow-hidden overflow-visible font-bold"
+        <div className={invoice.billingType === 'MONTHLY_KM' || invoice.billingType === 'TEMPORARY_BILL'
+          ? "bg-white text-black p-4 md:p-8 print:p-0 min-w-[700px] md:min-w-0 max-w-[210mm] mx-auto print:w-[210mm] overflow-visible font-bold"
+          : invoice.billingType === 'LOCAL_BILL'
+          ? "bg-white text-black p-4 md:p-8 print:p-0 min-w-[700px] md:min-w-0 max-w-[210mm] mx-auto print:w-[210mm] overflow-visible font-bold"
           : "bg-white border sm:rounded-lg print:border-none print:shadow-none p-4 sm:p-8 md:p-10 print:p-0 min-w-[700px] md:min-w-0 overflow-hidden print:overflow-visible shadow-sm mx-auto"}>
         
-        {/* Company Header (Only for STANDARD) */}
-        {invoice.billingType !== 'MONTHLY_KM' && (
+        {/* Company Header (Only for STANDARD and LOCAL_BILL) */}
+        {(invoice.billingType !== 'MONTHLY_KM' && invoice.billingType !== 'TEMPORARY_BILL') && (
           <>
             <CustomInvoiceHeader company={company} />
 
             <div className="text-center font-bold text-base sm:text-lg uppercase tracking-widest underline mb-4 text-black">
-              TAX INVOICE / CONSIGNMENT NOTE
+              {invoice.billingType === 'LOCAL_BILL' ? 'LOCAL DELIVERY BILL' : 'TAX INVOICE / CONSIGNMENT NOTE'}
             </div>
           </>
         )}
@@ -202,6 +204,21 @@ ${senderName}` +
             company={company} 
             customer={customer} 
             amountToWords={amountToWords} 
+          />
+        ) : invoice.billingType === 'TEMPORARY_BILL' ? (
+          <TemporaryBillPreview
+            invoice={invoice}
+            company={company}
+            customer={customer}
+            amountToWords={amountToWords}
+          />
+        ) : invoice.billingType === 'LOCAL_BILL' ? (
+          <LocalBillPreview
+            invoice={invoice}
+            company={company}
+            customer={customer}
+            currency={currency}
+            amountToWords={amountToWords}
           />
         ) : (
           <>
@@ -511,6 +528,9 @@ function CustomInvoiceHeader({ company }: { company: any }) {
   // Match "S N Logistics" — check for 'logistics' keyword first (most specific)
   const isSNLogistics = name.includes('logistics') || name.includes('s n logistics') || name.includes('snl');
 
+  // Match "Aditya Roadlines"
+  const isAditya = name.includes('aditya') || name.includes('aditya roadlines');
+
   // Match "V S Tiwari Transport" — check for 'tiwari' keyword
   const isVSTT = name.includes('tiwari') || name.includes('vstt') || name.includes('v s tiwari') || name.includes('v.s.tiwari');
 
@@ -551,6 +571,26 @@ function CustomInvoiceHeader({ company }: { company: any }) {
         <div className="border-t-[1.5px] border-b-[1.5px] border-[#cc0000] py-2 text-center px-2">
           <p className="text-[#cc0000] font-bold text-[14px] sm:text-[16px]">
             Room No. 563, Dhodipuja, Navapur Road, Boisar, Tal. Dist. Palghar, 401 501 Maharashtra
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  if (isAditya) {
+    return (
+      <div className="w-full flex flex-col pt-3 pb-3 px-2 mb-2">
+        <div className="flex flex-col items-end text-[#cc0000] font-bold text-[13px] sm:text-[15px] leading-tight mr-4">
+          <span>Mob.: 8830695514</span>
+        </div>
+        <div className="text-center mt-1 mb-2">
+          <h1 className="text-[#cc0000] font-black text-[40px] sm:text-[48px] tracking-wide uppercase font-sans">
+            ADITYA ROADLINES
+          </h1>
+        </div>
+        <div className="border-t-[1.5px] border-b-[1.5px] border-[#cc0000] py-2 text-center px-2">
+          <p className="text-[#cc0000] font-bold text-[14px] sm:text-[16px]">
+            House No. 2654, Near Tiwari Flour Mill, Dhodipooja, Navapur Road, Boisar, Tal. & Dist. Palghar - 401 501.
           </p>
         </div>
       </div>
@@ -765,3 +805,364 @@ function MonthlyKmPreview({ invoice, company, customer, amountToWords }: any) {
     </div>
   );
 }
+
+function LocalBillPreview({ invoice, company: _company, customer, currency, amountToWords }: any) {
+  const numTrips = invoice.numberOfTrips || 0;
+  const tripRate = invoice.perTripRate || 0;
+  const tripsTotal = numTrips * tripRate;
+
+  return (
+    <div className="text-black font-sans text-sm bg-white">
+      {/* Top Boxes: Customer & Bill Info */}
+      <div className="grid grid-cols-1 md:grid-cols-[1fr_auto] gap-4 mb-6 print:grid-cols-[1fr_auto]">
+        {/* Customer Box */}
+        <div className="border-2 border-black p-3 sm:p-4 flex flex-col justify-between min-h-[120px] bg-white">
+          <div>
+            <div className="font-extrabold text-base uppercase text-black leading-snug">
+              TO- {customer?.companyName || customer?.customerName || 'VALUED CUSTOMER'}
+            </div>
+            {customer?.companyName && customer?.customerName && (
+              <div className="text-sm font-semibold text-slate-800 mt-0.5">{customer.customerName}</div>
+            )}
+            {customer?.billingAddress && (
+              <div className="text-sm text-slate-700 mt-1.5 whitespace-pre-wrap">{customer.billingAddress}</div>
+            )}
+            {(customer?.city || customer?.state) && (
+              <div className="text-sm text-slate-700">{customer.city}{customer.state ? `, ${customer.state}` : ''} {customer.pinCode}</div>
+            )}
+          </div>
+          <div className="mt-3 pt-2 border-t border-slate-200 text-xs sm:text-sm space-y-0.5 text-slate-800">
+            {customer?.phone && <div><strong>Phone:</strong> {customer.phone}</div>}
+            {customer?.gstNumber && <div><strong>GSTIN:</strong> <span className="font-bold">{customer.gstNumber}</span></div>}
+          </div>
+        </div>
+
+        {/* Bill Details Box */}
+        <div className="border-2 border-black w-full md:w-72 print:w-72 bg-white self-start">
+          <div className="flex border-b-2 border-black text-sm">
+            <div className="w-28 font-extrabold p-2 border-r-2 border-black bg-slate-100 uppercase text-xs flex items-center">BILL NO</div>
+            <div className="flex-1 p-2 font-bold text-black break-all">{invoice.invoiceNumber}</div>
+          </div>
+          {!!invoice.invoiceDate && (
+            <div className="flex border-b-2 border-black text-sm">
+              <div className="w-28 font-extrabold p-2 border-r-2 border-black bg-slate-100 uppercase text-xs flex items-center">BILL DATE</div>
+              <div className="flex-1 p-2 font-semibold text-black">
+                {new Date(invoice.invoiceDate).toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric' })}
+              </div>
+            </div>
+          )}
+          {invoice.vehicleNumber && (
+            <div className="flex border-b border-black text-sm">
+              <div className="w-28 font-extrabold p-2 border-r border-black bg-slate-50 uppercase text-xs flex items-center">VEHICLE NO</div>
+              <div className="flex-1 p-2 font-bold uppercase text-black break-all">{invoice.vehicleNumber}</div>
+            </div>
+          )}
+          {invoice.localArea && (
+            <div className="flex border-b border-black text-sm">
+              <div className="w-28 font-extrabold p-2 border-r border-black bg-slate-50 uppercase text-xs flex items-center">AREA</div>
+              <div className="flex-1 p-2 font-medium text-black">{invoice.localArea}</div>
+            </div>
+          )}
+          {invoice.partyChallanNo && (
+            <div className="flex text-sm">
+              <div className="w-28 font-extrabold p-2 border-r border-black bg-slate-50 uppercase text-xs flex items-center">CHALLAN NO</div>
+              <div className="flex-1 p-2 font-bold text-black">{invoice.partyChallanNo}</div>
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Main Charges Table */}
+      <div className="border-2 border-black overflow-hidden bg-white">
+        <table className="w-full text-sm border-collapse">
+          <thead>
+            <tr className="border-b-2 border-black bg-slate-100 font-extrabold text-black uppercase text-xs sm:text-sm">
+              <th className="w-14 sm:w-16 border-r-2 border-black text-center py-3 px-1">SR NO</th>
+              <th className="border-r-2 border-black text-center py-3 px-4 tracking-wider">LOCAL TRANSPORT CHARGES</th>
+              <th className="w-36 sm:w-44 text-center py-3 px-3">AMOUNT RS</th>
+            </tr>
+          </thead>
+          <tbody>
+            {/* Trip Charges Row */}
+            <tr className="border-b border-slate-300">
+              <td className="w-14 sm:w-16 border-r-2 border-black text-center py-4 px-2 font-bold text-slate-800 align-top">1</td>
+              <td className="border-r-2 border-black py-4 px-4 text-left align-top">
+                <div className="font-extrabold text-base text-black uppercase">Local Delivery Charges</div>
+                {invoice.localArea && (
+                  <div className="text-sm font-semibold text-slate-800 mt-1">
+                    Area: <span className="text-black">{invoice.localArea}</span>
+                  </div>
+                )}
+                {numTrips > 0 && (
+                  <div className="text-sm text-slate-700 mt-1.5">
+                    <strong>No. of Trips:</strong> {numTrips} &nbsp;|&nbsp; <strong>Rate/Trip:</strong> {currency}{tripRate.toFixed(2)}
+                  </div>
+                )}
+                {invoice.goodsDescription && (
+                  <div className="text-sm text-slate-700 mt-1 whitespace-pre-wrap">
+                    <strong>Description:</strong> {invoice.goodsDescription}
+                  </div>
+                )}
+                {invoice.localDeliveryNote && (
+                  <div className="text-sm text-slate-600 mt-1 italic">{invoice.localDeliveryNote}</div>
+                )}
+              </td>
+              <td className="w-36 sm:w-44 text-right py-4 px-4 font-bold text-base text-black align-top whitespace-nowrap">
+                {currency}{(numTrips > 0 && tripRate > 0 ? tripsTotal : invoice.freightCharge).toFixed(2)}
+              </td>
+            </tr>
+
+            {/* Extra Charges Rows */}
+            {Array.isArray(invoice.extraCharges) && invoice.extraCharges.map((charge: any, idx: number) => (
+              <tr key={idx} className="border-b border-slate-300">
+                <td className="w-14 sm:w-16 border-r-2 border-black text-center py-3 px-2 font-semibold text-slate-700 align-top">{idx + 2}</td>
+                <td className="border-r-2 border-black py-3 px-4 text-slate-800 align-top font-medium">{charge.name}</td>
+                <td className="w-36 sm:w-44 text-right py-3 px-4 text-slate-900 font-semibold align-top whitespace-nowrap">
+                  {currency}{charge.amount.toFixed(2)}
+                </td>
+              </tr>
+            ))}
+
+            {/* Empty Filler Row */}
+            <tr className="h-32 sm:h-48 print:h-48 border-b-2 border-black">
+              <td className="w-14 sm:w-16 border-r-2 border-black"></td>
+              <td className="border-r-2 border-black"></td>
+              <td className="w-36 sm:w-44"></td>
+            </tr>
+
+            {/* Subtotal (if extra charges exist) */}
+            {(Array.isArray(invoice.extraCharges) && invoice.extraCharges.length > 0) || invoice.discount > 0 ? (
+              <tr className="border-b border-black">
+                <td colSpan={2} className="border-r-2 border-black py-2 px-4 text-right font-bold text-xs uppercase text-slate-700">Subtotal</td>
+                <td className="py-2 px-4 text-right font-bold text-slate-900">{currency}{invoice.subtotal.toFixed(2)}</td>
+              </tr>
+            ) : null}
+
+            {invoice.discount > 0 && (
+              <tr className="border-b border-black text-red-600">
+                <td colSpan={2} className="border-r-2 border-black py-2 px-4 text-right font-bold text-xs uppercase">Less Discount</td>
+                <td className="py-2 px-4 text-right font-bold">-{currency}{invoice.discount.toFixed(2)}</td>
+              </tr>
+            )}
+
+            {invoice.cgstAmount > 0 && (
+              <tr className="border-b border-black">
+                <td colSpan={2} className="border-r-2 border-black py-2 px-4 text-right font-semibold text-xs text-slate-700 uppercase">CGST ({(invoice.gstPercentage/2).toFixed(1)}%)</td>
+                <td className="py-2 px-4 text-right font-semibold text-slate-900">{currency}{invoice.cgstAmount.toFixed(2)}</td>
+              </tr>
+            )}
+            {invoice.sgstAmount > 0 && (
+              <tr className="border-b border-black">
+                <td colSpan={2} className="border-r-2 border-black py-2 px-4 text-right font-semibold text-xs text-slate-700 uppercase">SGST ({(invoice.gstPercentage/2).toFixed(1)}%)</td>
+                <td className="py-2 px-4 text-right font-semibold text-slate-900">{currency}{invoice.sgstAmount.toFixed(2)}</td>
+              </tr>
+            )}
+            {invoice.igstAmount > 0 && (
+              <tr className="border-b border-black">
+                <td colSpan={2} className="border-r-2 border-black py-2 px-4 text-right font-semibold text-xs text-slate-700 uppercase">IGST ({invoice.gstPercentage}%)</td>
+                <td className="py-2 px-4 text-right font-semibold text-slate-900">{currency}{invoice.igstAmount.toFixed(2)}</td>
+              </tr>
+            )}
+
+            {/* Grand Total Row */}
+            <tr className="border-b-2 border-black bg-slate-100 font-extrabold text-black">
+              <td colSpan={2} className="border-r-2 border-black py-3 px-4 text-right text-sm sm:text-base uppercase tracking-wider">TOTAL AMOUNT RS</td>
+              <td className="py-3 px-4 text-right text-base sm:text-lg whitespace-nowrap">{currency}{invoice.grandTotal.toFixed(2)}</td>
+            </tr>
+
+            {invoice.paidAmount > 0 && (
+              <>
+                <tr className="border-b border-black text-slate-700">
+                  <td colSpan={2} className="border-r-2 border-black py-2 px-4 text-right font-semibold text-xs uppercase">Less Advance / Paid Amount</td>
+                  <td className="py-2 px-4 text-right font-semibold">-{currency}{invoice.paidAmount.toFixed(2)}</td>
+                </tr>
+                <tr className="bg-slate-50 font-extrabold text-black">
+                  <td colSpan={2} className="border-r-2 border-black py-2.5 px-4 text-right text-sm uppercase tracking-wider">NET BALANCE DUE</td>
+                  <td className="py-2.5 px-4 text-right text-base whitespace-nowrap">{currency}{invoice.balanceAmount.toFixed(2)}</td>
+                </tr>
+              </>
+            )}
+          </tbody>
+        </table>
+      </div>
+
+      {/* Bottom: Words, Bank Details & Signatures */}
+      <div className="border-2 border-t-0 border-black p-4 sm:p-6 grid grid-cols-1 md:grid-cols-2 gap-6 bg-white">
+        <div className="space-y-4 text-sm flex flex-col justify-between">
+          <div>
+            <div className="font-bold uppercase text-xs text-slate-600 mb-1">Amount in Words:</div>
+            <div className="font-extrabold text-black capitalize bg-slate-50 p-2.5 border border-slate-300 rounded text-sm">
+              Rupees {amountToWords(invoice.grandTotal)} Only
+            </div>
+            <div className="mt-4 pt-3 border-t border-slate-200">
+              <div className="font-bold uppercase text-xs text-black underline mb-2">Payment &amp; Bank Details:</div>
+              {_company?.bankName ? (
+                <div className="grid grid-cols-[85px_1fr] gap-x-2 gap-y-1 text-xs text-slate-800">
+                  <span className="font-semibold text-slate-600">Bank Name:</span>
+                  <span className="font-bold text-black">{_company.bankName}</span>
+                  <span className="font-semibold text-slate-600">A/C Name:</span>
+                  <span className="font-semibold text-black">{_company.accountHolder || 'N/A'}</span>
+                  <span className="font-semibold text-slate-600">A/C No:</span>
+                  <span className="font-bold text-black">{_company.accountNumber || 'N/A'}</span>
+                  <span className="font-semibold text-slate-600">IFSC Code:</span>
+                  <span className="font-bold text-black">{_company.ifscCode || 'N/A'}</span>
+                  {_company.upiId && (
+                    <>
+                      <span className="font-semibold text-slate-600">UPI ID:</span>
+                      <span className="font-bold text-black">{_company.upiId}</span>
+                    </>
+                  )}
+                </div>
+              ) : (
+                <div className="text-slate-500 italic">No bank details provided.</div>
+              )}
+            </div>
+            {_company?.termsAndConditions && (
+              <div className="mt-4 pt-3 border-t border-slate-200">
+                <div className="font-bold uppercase text-xs text-black underline mb-1">Terms &amp; Conditions:</div>
+                <div className="text-[10px] text-slate-600 whitespace-pre-wrap leading-relaxed">{_company.termsAndConditions}</div>
+              </div>
+            )}
+          </div>
+        </div>
+
+        <div className="flex flex-col justify-end items-end space-y-12 pb-2">
+          <div className="text-right">
+            <div className="font-bold text-sm text-black mb-12">For {_company?.companyName || 'Transport Company'}</div>
+            {_company?.authorizedSignature ? (
+              <img src={_company.authorizedSignature} alt="Signature" className="h-16 object-contain ml-auto mb-2" />
+            ) : (
+              <div className="h-16"></div>
+            )}
+            <div className="border-t border-black pt-1 w-48 text-center text-xs font-bold text-black uppercase">Authorized Signatory</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function TemporaryBillPreview({ invoice, company, customer, amountToWords }: any) {
+  return (
+    <div className="text-black font-sans text-sm bg-white relative h-full">
+      <CustomInvoiceHeader company={company} />
+      
+      <div className="border-t-[3px] border-black pt-2 px-2 mt-1">
+        <div className="flex justify-between items-center mb-2 text-[15px] font-extrabold tracking-wide">
+          <div>Bill No-{invoice.invoiceNumber}</div>
+          <div className="text-[17px] underline tracking-widest uppercase">GST INVOICE</div>
+          <div>DATE {new Date(invoice.invoiceDate).toLocaleDateString('en-GB')}</div>
+        </div>
+
+        <div className="mb-1 font-bold text-[15px] leading-relaxed">
+          <div className="flex gap-2">
+            <span>M/s -</span>
+            <span className="uppercase text-[16px]">{customer?.companyName || customer?.customerName || ''}</span>
+          </div>
+          <div className="uppercase ml-9 text-[15px]">
+            {(customer?.billingAddress || '').replace(/\n/g, ' ')} {customer?.city || ''} {customer?.pinCode || ''}
+          </div>
+          <div className="ml-9">
+            GSTIN - {customer?.gstNumber || ''}
+          </div>
+        </div>
+
+        {/* Main Table */}
+        <table className="w-full border-collapse border-[2px] border-black mt-1">
+          <thead>
+            <tr>
+              <th className="border-[2px] border-black p-1.5 w-[10%] text-center text-[15px] font-extrabold">Sr. No.</th>
+              <th className="border-[2px] border-black p-1.5 w-[65%] text-center text-[15px] font-extrabold">Transportation Charges</th>
+              <th className="border-[2px] border-black p-1.5 w-[25%] text-center text-[15px] font-extrabold">Amount</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr className="border-none">
+              <td className="border-r-[2px] border-black p-1.5"></td>
+              <td className="border-r-[2px] border-black p-1.5 pt-2 pb-1 font-extrabold text-[15px] underline tracking-wide">
+                TRANSPORTATION CHARGES AS PER TRIP
+              </td>
+              <td className="border-r-[2px] border-black p-1.5"></td>
+            </tr>
+
+            {Array.isArray(invoice.trips) && invoice.trips.map((trip: any, idx: number) => {
+              const km = Math.max(0, Number(trip.endKm || 0) - Number(trip.startKm || 0));
+              const amount = km * Number(trip.ratePerKm || 0);
+              
+              return (
+                <tr key={idx} className="border-none">
+                  <td className="border-r-[2px] border-black p-1.5 text-center align-top font-bold text-[15px]">
+                    {String(idx + 1).padStart(2, '0')}
+                  </td>
+                  <td className="border-r-[2px] border-black p-1.5 pt-1 font-bold text-[15px]">
+                    <div className="flex justify-between mb-1 pr-6">
+                      <span>Vehicle No. <span className="uppercase ml-2 tracking-wide">{trip.vehicleNumber || ''}</span></span>
+                      <span>RATE PER {trip.ratePerKm || 0} Rs. KM</span>
+                    </div>
+                    <div className="flex gap-4 mb-1 uppercase">
+                      <span>{trip.periodStart ? new Date(trip.periodStart).toLocaleDateString('en-GB') : ''} TO {trip.periodEnd ? new Date(trip.periodEnd).toLocaleDateString('en-GB') : ''}</span>
+                      <span className="font-extrabold tracking-wide">{trip.fromLocation || ''} TO {trip.toLocation || ''}</span>
+                    </div>
+                    <div className="flex justify-between w-[60%] mb-0">
+                      <span>STARTING AT {trip.fromLocation || ''}</span>
+                      <span>{trip.startKm || 0}</span>
+                    </div>
+                    <div className="flex justify-between w-[60%]">
+                      <span>ENDING AT {trip.toLocation || ''}</span>
+                      <span>{trip.endKm || 0}</span>
+                    </div>
+                    <div className="w-[65%] border-t-[1.5px] border-dashed border-black my-1"></div>
+                    <div className="font-extrabold tracking-wide">
+                      = {km} X {trip.ratePerKm || 0} Rs Per KM = {amount.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} Rs.
+                    </div>
+                  </td>
+                  <td className="border-r-[2px] border-black p-1.5 text-right align-bottom font-extrabold text-[16px]">
+                    {amount.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                  </td>
+                </tr>
+              );
+            })}
+            
+            <tr className="border-none h-10">
+              <td className="border-r-[2px] border-black"></td>
+              <td className="border-r-[2px] border-black relative">
+                 <div className="absolute bottom-1 left-4 text-[14px] font-bold flex flex-col">
+                    <span>GSTIN- {company?.gstNumber || ''}</span>
+                    <span>PAN NO- {company?.panNumber || ''}</span>
+                 </div>
+                 <div className="absolute bottom-2 right-6 text-[14px] font-extrabold tracking-wide">
+                    GST PAID BY BILL RECEIVER
+                 </div>
+              </td>
+              <td className="border-r-[2px] border-black"></td>
+            </tr>
+
+            <tr className="border-t-[2px] border-black font-extrabold text-[17px]">
+              <td className="border-r-[2px] border-black p-2"></td>
+              <td className="border-r-[2px] border-black p-2 text-right tracking-wide">TOTAL Rs.</td>
+              <td className="border-r-[2px] border-black p-2 text-right">
+                {invoice.grandTotal.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+              </td>
+            </tr>
+            
+            <tr className="border-t-[2px] border-black">
+              <td colSpan={3} className="p-2 font-bold text-[16px] tracking-wide">
+                Rupees {amountToWords(invoice.grandTotal)}
+              </td>
+            </tr>
+          </tbody>
+        </table>
+
+        <div className="flex justify-between items-end mt-4 mb-2 font-extrabold px-4">
+          <div></div>
+          <div className="text-center text-[16px] tracking-wide">
+            <div>For {company?.companyName || 'Transport Company'}</div>
+            <div className="mt-8">Proprietor</div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  );
+}
+

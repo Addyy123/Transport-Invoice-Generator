@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { useForm, useFieldArray, useWatch } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { FileText, Save, Plus, Trash2, Calculator, Loader2, History, RotateCcw, Truck, ArrowRight, ArrowLeft, Check, Layers, LayoutList } from 'lucide-react';
+import { FileText, Save, Plus, Trash2, Calculator, Loader2, History, RotateCcw, Truck, ArrowRight, ArrowLeft, Check, Layers, LayoutList, MapPin } from 'lucide-react';
 import { toast } from 'sonner';
 import { db } from '../lib/db';
 import { invoiceSchema, type Invoice, type Customer, type CompanyProfile, type Settings as AppSettings } from '../lib/schema';
@@ -10,12 +10,14 @@ import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
 
 import { Label } from '../components/ui/label';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useNavigate, useParams, useLocation } from 'react-router-dom';
 import { generateId } from '../lib/utils';
 
 export function CreateInvoice() {
   const navigate = useNavigate();
   const { id } = useParams();
+  const location = useLocation();
+  const isLocalBillRoute = location.pathname === '/create-local-bill';
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [companies, setCompanies] = useState<CompanyProfile[]>([]);
   const [appSettings, setAppSettings] = useState<AppSettings | null>(null);
@@ -66,6 +68,11 @@ export function CreateInvoice() {
     name: 'extraCharges'
   });
 
+  const { fields: tripFields, append: appendTrip, remove: removeTrip } = useFieldArray({
+    control,
+    name: 'trips'
+  });
+
   // Watch fields for live calculation
   const selectedCompanyId = useWatch({ control, name: 'companyId' });
   const currentVehicleNumber = useWatch({ control, name: 'vehicleNumber' }) || '';
@@ -89,6 +96,13 @@ export function CreateInvoice() {
   const periodStart = useWatch({ control, name: 'periodStart' });
   const periodEnd = useWatch({ control, name: 'periodEnd' });
 
+  // Local Bill watches
+  const numberOfTrips = useWatch({ control, name: 'numberOfTrips' }) || 0;
+  const perTripRate = useWatch({ control, name: 'perTripRate' }) || 0;
+
+  // Temporary Bill watches
+  const trips = useWatch({ control, name: 'trips' }) || [];
+
   // Auto-calculation logic
   useEffect(() => {
     let currentFreightCharge = Number(freightCharge);
@@ -99,10 +113,15 @@ export function CreateInvoice() {
       const extraKm = Math.max(0, chargeableKm - Number(baseKm));
       const extraAmount = extraKm * Number(extraKmRate);
       currentFreightCharge = baseAmount + extraAmount;
-      // We don't setValue('freightCharge') here to avoid dependency loops, 
-      // instead we just use the calculated value for subtotal. We'll set freightCharge on submit or let the user see the subtotal.
-      // Wait, actually setting freightCharge is fine if we don't include it in the dependency array for this specific calculation.
-      // But to be safe, we'll just calculate subtotal directly.
+    } else if (billingType === 'LOCAL_BILL') {
+      currentFreightCharge = Number(numberOfTrips) * Number(perTripRate);
+    } else if (billingType === 'TEMPORARY_BILL') {
+      let tempTotal = 0;
+      trips.forEach((trip: any) => {
+        const km = Math.max(0, Number(trip.endKm || 0) - Number(trip.startKm || 0));
+        tempTotal += km * Number(trip.ratePerKm || 0);
+      });
+      currentFreightCharge = tempTotal;
     }
 
     const extraChargesTotal = extraCharges.reduce((sum: number, charge: any) => sum + (Number(charge.amount) || 0), 0);
@@ -140,8 +159,14 @@ export function CreateInvoice() {
     if (billingType === 'MONTHLY_KM' && currentFreightCharge !== Number(freightCharge)) {
       setValue('freightCharge', currentFreightCharge);
     }
+    if (billingType === 'LOCAL_BILL' && currentFreightCharge !== Number(freightCharge)) {
+      setValue('freightCharge', currentFreightCharge);
+    }
+    if (billingType === 'TEMPORARY_BILL' && currentFreightCharge !== Number(freightCharge)) {
+      setValue('freightCharge', currentFreightCharge);
+    }
     
-  }, [freightCharge, extraCharges, discount, gstOption, gstPercentage, paidAmount, billingType, startKm, endKm, baseKm, baseRate, extraKmRate, setValue]);
+  }, [freightCharge, extraCharges, discount, gstOption, gstPercentage, paidAmount, billingType, startKm, endKm, baseKm, baseRate, extraKmRate, numberOfTrips, perTripRate, trips, setValue]);
 
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
@@ -206,6 +231,10 @@ export function CreateInvoice() {
             reset(existingInvoice);
           }
         } else {
+          // Auto-set billingType for Local Bill route
+          if (isLocalBillRoute) {
+            setValue('billingType', 'LOCAL_BILL');
+          }
           if (settings) {
             setValue('gstPercentage', settings.defaultGstPercentage);
           }
@@ -438,10 +467,10 @@ export function CreateInvoice() {
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b pb-4">
           <div>
             <h2 className="text-xl sm:text-2xl font-bold tracking-tight flex items-center gap-2">
-              <FileText className="h-6 w-6 text-primary" />
-              {id ? 'Edit Invoice' : 'Create Invoice'}
+              {billingType === 'LOCAL_BILL' ? <MapPin className="h-6 w-6 text-primary" /> : <FileText className="h-6 w-6 text-primary" />}
+              {id ? 'Edit Invoice' : (billingType === 'LOCAL_BILL' ? 'Create Local Bill' : 'Create Invoice')}
             </h2>
-            <p className="text-sm text-muted-foreground">{id ? 'Update your transport invoice section by section.' : 'Generate a new transport invoice section by section.'}</p>
+            <p className="text-sm text-muted-foreground">{id ? 'Update your transport invoice section by section.' : (billingType === 'LOCAL_BILL' ? 'Generate a local delivery bill for within-city transport.' : 'Generate a new transport invoice section by section.')}</p>
           </div>
           <div className="flex items-center gap-1.5 bg-slate-100 p-1 rounded-lg self-start sm:self-auto">
             <button
@@ -780,8 +809,42 @@ export function CreateInvoice() {
                   <select id="billingType" className="flex h-10 w-full rounded-md border border-input bg-white px-3 py-2 text-sm shadow-sm" {...register('billingType')}>
                     <option value="STANDARD">Standard Billing (Manual Freight)</option>
                     <option value="MONTHLY_KM">Monthly KM Contract</option>
+                    <option value="LOCAL_BILL">Local Bill (Within City / Local Delivery)</option>
+                    <option value="TEMPORARY_BILL">Temporary Bill (Per Trip)</option>
                   </select>
                 </div>
+
+                {billingType === 'LOCAL_BILL' && (
+                  <div className="grid grid-cols-2 gap-4 mt-4 animate-in fade-in zoom-in-95">
+                    <div className="space-y-2 col-span-2">
+                      <Label className="flex items-center gap-1.5"><MapPin className="h-3.5 w-3.5 text-primary" />Local Area / Delivery Zone</Label>
+                      <Input {...register('localArea')} placeholder="e.g. Boisar Industrial Area, MIDC" />
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Number of Trips</Label>
+                      <Input type="number" min="1" {...register('numberOfTrips', { valueAsNumber: true })} placeholder="e.g. 10" />
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Rate Per Trip (₹)</Label>
+                      <Input type="number" step="0.01" {...register('perTripRate', { valueAsNumber: true })} placeholder="e.g. 500" />
+                    </div>
+                    {Number(numberOfTrips) > 0 && Number(perTripRate) > 0 && (
+                      <div className="col-span-2 bg-blue-50 border border-blue-200 rounded-md p-3">
+                        <p className="text-sm font-semibold text-blue-800">
+                          Auto-calculated Freight: {Number(numberOfTrips)} trips × ₹{Number(perTripRate).toFixed(2)} = <span className="text-primary font-bold">₹{(Number(numberOfTrips) * Number(perTripRate)).toFixed(2)}</span>
+                        </p>
+                      </div>
+                    )}
+                    <div className="space-y-2 col-span-2">
+                      <Label>Delivery Note / Remarks</Label>
+                      <Input {...register('localDeliveryNote')} placeholder="e.g. Local delivery within Boisar city limits" />
+                    </div>
+                    <div className="space-y-2 col-span-2">
+                      <Label>Party's Challan No.</Label>
+                      <Input {...register('partyChallanNo')} placeholder="e.g. CH-2023-04" />
+                    </div>
+                  </div>
+                )}
 
                 {billingType === 'MONTHLY_KM' && (
                   <div className="grid grid-cols-2 gap-4 mt-4 animate-in fade-in zoom-in-95">
@@ -822,11 +885,85 @@ export function CreateInvoice() {
                     </div>
                   </div>
                 )}
+
+                {billingType === 'TEMPORARY_BILL' && (
+                  <div className="mt-4 animate-in fade-in zoom-in-95 space-y-4">
+                    <div className="flex justify-between items-center mb-2">
+                      <Label className="text-base">Trips Details</Label>
+                      <Button type="button" variant="outline" size="sm" onClick={() => appendTrip({ id: generateId(), vehicleNumber: currentVehicleNumber, ratePerKm: 0 })}>
+                        <Plus className="h-4 w-4 mr-1" /> Add Trip
+                      </Button>
+                    </div>
+                    {tripFields.map((field, index) => (
+                      <div key={field.id} className="border border-slate-200 rounded-lg p-4 bg-white space-y-4 relative">
+                        <div className="absolute top-2 right-2">
+                          <Button type="button" variant="ghost" size="icon" className="h-8 w-8 text-red-500 hover:text-red-700 hover:bg-red-50" onClick={() => removeTrip(index)}>
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </div>
+                        <h4 className="font-semibold text-sm">Trip {index + 1}</h4>
+                        
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          <div className="space-y-2">
+                            <Label>Vehicle Number</Label>
+                            <Input {...register(`trips.${index}.vehicleNumber`)} placeholder="e.g. MH04 AB 1234" />
+                          </div>
+                          <div className="space-y-2">
+                            <Label>Rate Per KM</Label>
+                            <Input type="number" step="0.01" {...register(`trips.${index}.ratePerKm`, { valueAsNumber: true })} />
+                          </div>
+                          
+                          <div className="space-y-2">
+                            <Label>From Location</Label>
+                            <Input {...register(`trips.${index}.fromLocation`)} placeholder="e.g. Pune" />
+                          </div>
+                          <div className="space-y-2">
+                            <Label>To Location</Label>
+                            <Input {...register(`trips.${index}.toLocation`)} placeholder="e.g. Nanded" />
+                          </div>
+                          
+                          <div className="space-y-2">
+                            <Label>Start Date</Label>
+                            <Input type="date" value={formatDateForInput(trips[index]?.periodStart)} onChange={(e) => {
+                              const val = e.target.value ? new Date(e.target.value).getTime() : undefined;
+                              setValue(`trips.${index}.periodStart`, val);
+                            }} />
+                          </div>
+                          <div className="space-y-2">
+                            <Label>End Date</Label>
+                            <Input type="date" value={formatDateForInput(trips[index]?.periodEnd)} onChange={(e) => {
+                              const val = e.target.value ? new Date(e.target.value).getTime() : undefined;
+                              setValue(`trips.${index}.periodEnd`, val);
+                            }} />
+                          </div>
+
+                          <div className="space-y-2">
+                            <Label>Start KM</Label>
+                            <Input type="number" {...register(`trips.${index}.startKm`, { valueAsNumber: true })} />
+                          </div>
+                          <div className="space-y-2">
+                            <Label>End KM</Label>
+                            <Input type="number" {...register(`trips.${index}.endKm`, { valueAsNumber: true })} />
+                          </div>
+                        </div>
+                        
+                        <div className="bg-slate-50 p-2 rounded text-sm text-right font-semibold">
+                          Trip Amount: {appSettings?.currencySymbol} {((Math.max(0, Number(trips[index]?.endKm || 0) - Number(trips[index]?.startKm || 0))) * Number(trips[index]?.ratePerKm || 0)).toFixed(2)}
+                        </div>
+                      </div>
+                    ))}
+                    {tripFields.length === 0 && (
+                      <div className="text-center p-4 border border-dashed rounded text-muted-foreground text-sm">
+                        No trips added. Click "Add Trip" to get started.
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="freightCharge" className="text-base">Base Freight Charge ({appSettings?.currencySymbol}) {billingType === 'MONTHLY_KM' ? '(Auto-calculated)' : ''}</Label>
-                <Input id="freightCharge" type="number" step="0.01" className="text-lg font-medium" disabled={billingType === 'MONTHLY_KM'} {...register('freightCharge', { valueAsNumber: true })} />
+                <Label htmlFor="freightCharge" className="text-base">Base Freight Charge ({appSettings?.currencySymbol}) {billingType === 'MONTHLY_KM' ? '(Auto-calculated from KM)' : billingType === 'LOCAL_BILL' ? '(Auto-calculated from Trips)' : billingType === 'TEMPORARY_BILL' ? '(Auto-calculated from Multiple Trips)' : ''}</Label>
+                <Input id="freightCharge" type="number" step="0.01" className="text-lg font-medium" disabled={billingType === 'MONTHLY_KM' || billingType === 'LOCAL_BILL' || billingType === 'TEMPORARY_BILL'} {...register('freightCharge', { valueAsNumber: true })} />
               </div>
 
               <div className="space-y-3">

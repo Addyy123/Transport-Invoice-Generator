@@ -74,6 +74,18 @@ export const chargeSchema = z.object({
   amount: z.number().min(0, 'Amount must be non-negative'),
 });
 
+export const tripSchema = z.object({
+  id: z.string(),
+  vehicleNumber: z.string().optional(),
+  fromLocation: z.string().optional(),
+  toLocation: z.string().optional(),
+  periodStart: numOpt,
+  periodEnd: numOpt,
+  startKm: numOpt,
+  endKm: numOpt,
+  ratePerKm: numOpt,
+});
+
 export const invoiceSchema = z.object({
   id: z.string(),
   invoiceNumber: z.string().min(1, 'Invoice number is required'),
@@ -85,6 +97,12 @@ export const invoiceSchema = z.object({
   
   // Transport Details
   billingType: z.string().default('STANDARD'),
+  // Local Bill Fields
+  numberOfTrips: numOpt,
+  perTripRate: numOpt,
+  localArea: z.string().optional(),
+  localDeliveryNote: z.string().optional(),
+  partyChallanNo: z.string().optional(),
   lrNumber: z.string().optional(),
   tripNumber: z.string().optional(),
   bookingNumber: z.string().optional(),
@@ -105,6 +123,9 @@ export const invoiceSchema = z.object({
   periodEnd: numOpt,
   startKm: numOpt,
   endKm: numOpt,
+  
+  // Temporary Bill (Per Trip) Details
+  trips: z.array(tripSchema).default([]),
 
   // Consignment Details
   goodsDescription: z.string().optional(),
@@ -140,3 +161,5 @@ export const invoiceSchema = z.object({
 
 export type Invoice = z.infer<typeof invoiceSchema>;
 export type InvoiceCharge = z.infer<typeof chargeSchema>;
+export type InvoiceTrip = z.infer<typeof tripSchema>;
+

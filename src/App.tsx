@@ -35,6 +35,7 @@ function App() {
             }>
               <Route index element={<Dashboard />} />
               <Route path="create-invoice" element={<CreateInvoice />} />
+              <Route path="create-local-bill" element={<CreateInvoice />} />
               <Route path="edit-invoice/:id" element={<CreateInvoice />} />
               <Route path="invoice/:id" element={<InvoicePreview />} />
               <Route path="customers" element={<Customers />} />
